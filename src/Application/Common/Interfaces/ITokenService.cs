@@ -10,5 +10,5 @@ public interface ITokenService
     Task<Result<string>> IssueRefreshToken(User user);
     public string GenerateVerificationToken(User user);
     Task<Result<string>> IssueVerificationToken(User user, VerificationTokenType type);
-    Task<Result<string>> TryIssueVerificationTokenAsync(User user, VerificationTokenType type);
+    Task<int> GetCooldownRemainingSecondsAsync(string userId, VerificationTokenType type);
 }

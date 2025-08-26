@@ -8,4 +8,8 @@ public class CurrentUser(IHttpContextAccessor httpContextAccessor) : IUserServic
 {
     public string? Id => httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
     public string? Email => httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.Email);
+    public bool? EmailConfirmed =>
+    bool.TryParse(httpContextAccessor.HttpContext?.User?.FindFirstValue("EmailConfirmed"), out var value)
+        ? value
+        : null;
 }

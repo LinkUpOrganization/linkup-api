@@ -4,6 +4,7 @@ using Application.Auth.Commands.LoginWithGoogle;
 using Application.Auth.Commands.RefreshToken;
 using Application.Auth.Commands.Register;
 using Application.Auth.Commands.ResendEmailVerification;
+using Application.Auth.Queries.GetEmailVerificationCooldown;
 using Application.Common.Interfaces;
 using Infrastructure.Identity;
 using MediatR;
@@ -20,15 +21,20 @@ public class Auth : EndpointGroupBase
     public override void Map(WebApplication app)
     {
         app.MapGroup(this)
-           .MapGet(LoginWithGoogle, "login/google")
-           .MapPost(RefreshToken, "refresh-token")
-           .MapPost(Register, "register")
-           .MapPost(Login, "login")
-           .MapPost(ResendEmailVerification, "resend-verification")
-           .MapPost(ConfirmEmail, "confirm-email");
+            .MapGet(LoginWithGoogle, "login/google")
+            .MapPost(Login, "login")
+            .MapPost(Register, "register");
 
-        app.MapGet("callback/google", GoogleCallback)
-           .WithName("GoogleLoginCallback");
+        app.MapGroup(this)
+            .MapGet("callback/google", GoogleCallback)
+            .WithName("GoogleLoginCallback");
+
+        app.MapGroup(this)
+           .RequireAuthorization()
+           .MapPost(RefreshToken, "refresh-token")
+           .MapPost(ResendEmailVerification, "resend-verification")
+           .MapPost(ConfirmEmail, "confirm-email")
+           .MapGet(GetCooldownRemainingSeconds, "verification-cooldown");
     }
 
     private IResult LoginWithGoogle([FromQuery] string returnUrl, LinkGenerator linkGenerator,
@@ -91,6 +97,12 @@ public class Auth : EndpointGroupBase
     {
         var result = await sender.Send(new ResendEmailVerificationCommand());
         return result.IsSuccess ? Results.Ok("Email resend successfully!") : Results.BadRequest(result.Error);
+    }
+
+    private async Task<IResult> GetCooldownRemainingSeconds(ISender sender)
+    {
+        var result = await sender.Send(new GetEmailVerificationCooldownQuery());
+        return result.IsSuccess ? Results.Ok(result.Value) : Results.BadRequest(result.Error);
     }
 
     private async Task<IResult> ConfirmEmail(ConfirmEmailCommand command, ISender sender)

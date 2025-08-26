@@ -29,9 +29,13 @@ public class ResendEmailVerificationCommandHandler(
         if (!currentUserResult.IsSuccess || currentUserResult.Value == null)
             return Result.Failure(currentUserResult.Error!, currentUserResult.Code);
 
-        var verificationTokenResult = await tokenService
-            .TryIssueVerificationTokenAsync(currentUserResult.Value, VerificationTokenType.EmailVerification);
+        var remainingSeconds = await tokenService
+            .GetCooldownRemainingSecondsAsync(userId, VerificationTokenType.EmailVerification);
+        if (remainingSeconds > 0)
+            return Result.Failure($"Please wait {remainingSeconds} seconds before requesting another email.", 429);
 
+        var verificationTokenResult = await tokenService
+            .IssueVerificationToken(currentUserResult.Value, VerificationTokenType.EmailVerification);
         if (!verificationTokenResult.IsSuccess || verificationTokenResult.Value == null)
             return Result.Failure(verificationTokenResult.Error!, verificationTokenResult.Code);
 

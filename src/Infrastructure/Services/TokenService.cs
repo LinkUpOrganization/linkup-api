@@ -24,8 +24,8 @@ public class TokenService(IOptions<JwtOptions> jwtOptions, ApplicationDbContext 
         var claims = new[]
         {
             new Claim(ClaimTypes.NameIdentifier, user.Id),
-            new Claim(ClaimTypes.Name, user.UserName!),
-            new Claim(ClaimTypes.Email, user.Email!),
+            new Claim(ClaimTypes.Email, user.Email),
+            new Claim("EmailConfirmed", user.EmailConfirmed.ToString().ToLower())
         };
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtOptions.AccessToken.Key));
@@ -40,7 +40,6 @@ public class TokenService(IOptions<JwtOptions> jwtOptions, ApplicationDbContext 
 
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
-
 
     public string GenerateRefreshToken(User user)
     {
@@ -116,17 +115,19 @@ public class TokenService(IOptions<JwtOptions> jwtOptions, ApplicationDbContext 
             : Result<string>.Failure("Failed to save verification token", 400);
     }
 
-    public async Task<Result<string>> TryIssueVerificationTokenAsync(User user, VerificationTokenType type)
+    public async Task<int> GetCooldownRemainingSecondsAsync(string userId, VerificationTokenType type)
     {
         var lastToken = await dbContext.VerificationTokens
-            .Where(t => t.UserId == user.Id && t.Type == type)
+            .Where(t => t.UserId == userId && t.Type == type)
             .OrderByDescending(t => t.CreatedAt)
             .FirstOrDefaultAsync();
 
-        if (lastToken != null && lastToken.CreatedAt.AddMinutes(_jwtOptions.VerificationToken.CooldownMinutes) > DateTime.UtcNow)
-            return Result<string>.Failure("Please wait before requesting another verification email.", 429);
+        if (lastToken == null)
+            return 0;
 
-        return await IssueVerificationToken(user, type);
+        var cooldownUntil = lastToken.CreatedAt.AddSeconds(_jwtOptions.VerificationToken.CooldownSeconds);
+        var remaining = (int)(cooldownUntil - DateTime.UtcNow).TotalSeconds;
+
+        return remaining > 0 ? remaining : 0;
     }
-
 }

@@ -77,8 +77,12 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.Configure<SmtpSettings>(configuration.GetSection("SmtpSettings"));
 builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IUserService, CurrentUser>();
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorizationBuilder()
+    .AddPolicy("EmailVerified", policy =>
+        policy.RequireClaim("EmailConfirmed", "true"));
+
 builder.Services.AddMediatR(cfg =>
 {
     cfg.RegisterServicesFromAssembly(typeof(Application.Weather.Queries.GetWeatherQuery).Assembly);
