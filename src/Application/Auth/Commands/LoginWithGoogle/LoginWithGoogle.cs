@@ -7,10 +7,19 @@ namespace Application.Auth.Commands.LoginWithGoogle;
 
 public record LoginWithGoogleCommand(ClaimsPrincipal ClaimsPrincipal) : IRequest<Result<string>>;
 
-public class LoginWithGoogleCommandHandler(IAccountService accountService) : IRequestHandler<LoginWithGoogleCommand, Result<string>>
+public class LoginWithGoogleCommandHandler(IAccountService accountService, ITokenService tokenService)
+    : IRequestHandler<LoginWithGoogleCommand, Result<string>>
 {
     public async Task<Result<string>> Handle(LoginWithGoogleCommand request, CancellationToken ct)
     {
-        return await accountService.LoginWithGoogleAsync(request.ClaimsPrincipal);
+        var loginResult = await accountService.LoginWithGoogleAsync(request.ClaimsPrincipal);
+
+        if (!loginResult.IsSuccess || loginResult.Value == null)
+            return Result<string>.Failure(loginResult.Error!, loginResult.Code);
+
+        var refreshTokenResult = await tokenService.IssueRefreshToken(loginResult.Value);
+        return (refreshTokenResult.IsSuccess && !string.IsNullOrEmpty(refreshTokenResult.Value))
+            ? Result<string>.Success(refreshTokenResult.Value)
+            : Result<string>.Failure(refreshTokenResult.Error!, refreshTokenResult.Code);
     }
 }

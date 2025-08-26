@@ -1,17 +1,11 @@
 using FluentValidation;
 
-namespace Application.Auth.Commands.Register;
+namespace Application.Auth.Commands.Login;
 
-public class RegisterCommandValidator : AbstractValidator<RegisterCommand>
+public class LoginCommandValidator : AbstractValidator<LoginCommand>
 {
-    public RegisterCommandValidator()
+    public LoginCommandValidator()
     {
-        RuleFor(x => x.DisplayName)
-            .NotEmpty().WithMessage("Please specify your name")
-            .MinimumLength(2).WithMessage("Please enter a valid name")
-            .MaximumLength(50).WithMessage("Please enter a valid name")
-            .Must(name => name == name.Trim()).WithMessage("Please enter a valid name");
-
         RuleFor(x => x.Email)
             .NotEmpty().WithMessage("Email is required")
             .EmailAddress().WithMessage("Please enter a valid email address")

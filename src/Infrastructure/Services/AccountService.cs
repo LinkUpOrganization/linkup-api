@@ -4,6 +4,7 @@ using Application.Common.Exceptions;
 using Application.Common.Interfaces;
 using Application.Common.Models;
 using AutoMapper;
+using Domain.Enums;
 using Infrastructure.Identity;
 using Infrastructure.Persistence;
 using Microsoft.AspNetCore.Identity;
@@ -14,6 +15,15 @@ namespace Infrastructure.Services;
 public class AccountService(UserManager<ApplicationUser> userManager, ITokenService tokenService,
     ApplicationDbContext dbContext, IMapper mapper) : IAccountService
 {
+    public async Task<Result> ConfirmEmailAsync(string verificationToken)
+    {
+        var token = await dbContext.VerificationTokens.FirstOrDefaultAsync(x =>
+            x.Type == VerificationTokenType.EmailVerification && x.Token == verificationToken);
+
+        if (token == null) return Result.Failure("Failed to verify email", 400);
+        return Result.Success();
+    }
+
     public async Task<Result<User>> CreateUserAsync(string email, string displayName, string password)
     {
         var existinguserUser = await userManager.FindByEmailAsync(email);
@@ -32,7 +42,32 @@ public class AccountService(UserManager<ApplicationUser> userManager, ITokenServ
             : Result<User>.Failure("Failed to create user", 400);
     }
 
-    public async Task<Result<string>> LoginWithGoogleAsync(ClaimsPrincipal claimsPrincipal)
+    public async Task<Result<User>> FindUserByIdAsync(string id)
+    {
+        var applicationUser = await userManager.FindByIdAsync(id);
+        if (applicationUser == null) return Result<User>.Failure("User not found", 404);
+        return Result<User>.Success(mapper.Map<User>(applicationUser));
+    }
+
+    public async Task<Result<User>> LoginAsync(string email, string password)
+    {
+        var user = await userManager.FindByEmailAsync(email);
+        if (user == null)
+            return Result<User>.Failure("Invalid email or password", 401);
+
+        if (!await userManager.HasPasswordAsync(user))
+            return Result<User>.Failure("This account was created with Google. Please login with Google.", 400);
+
+        var isPasswordValid = await userManager.CheckPasswordAsync(user, password);
+        if (!isPasswordValid)
+            return Result<User>.Failure("Invalid email or password", 401);
+
+        var mappedUser = mapper.Map<User>(user);
+
+        return Result<User>.Success(mappedUser);
+    }
+
+    public async Task<Result<User>> LoginWithGoogleAsync(ClaimsPrincipal claimsPrincipal)
     {
         var email = claimsPrincipal.FindFirstValue(ClaimTypes.Email)
             ?? throw new ExternalLoginProviderException("Google", "Email is null");
@@ -43,7 +78,7 @@ public class AccountService(UserManager<ApplicationUser> userManager, ITokenServ
 
         var existingUserByLogin = await userManager.FindByLoginAsync(provider, providerKey);
         if (existingUserByLogin != null)
-            return await tokenService.IssueRefreshToken(mapper.Map<User>(existingUserByLogin));
+            return Result<User>.Success(mapper.Map<User>(existingUserByLogin));
 
         var user = await FindOrCreateUserAsync(email, displayName);
 
@@ -52,12 +87,12 @@ public class AccountService(UserManager<ApplicationUser> userManager, ITokenServ
         if (!loginResult.Succeeded &&
             loginResult.Errors.All(e => e.Code != "LoginAlreadyAssociated"))
         {
-            return Result<string>.Failure(
+            return Result<User>.Failure(
                 $"Unable to add login: {string.Join(", ", loginResult.Errors.Select(x => x.Description))}",
                 400);
         }
 
-        return await tokenService.IssueRefreshToken(mapper.Map<User>(user));
+        return Result<User>.Success(mapper.Map<User>(user));
     }
 
     public async Task<Result<string>> RefreshTokenAsync(string refreshToken)

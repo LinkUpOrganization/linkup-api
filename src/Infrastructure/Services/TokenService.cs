@@ -8,6 +8,7 @@ using Application.Common.Options;
 using Domain.Entities;
 using Domain.Enums;
 using Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
@@ -114,4 +115,18 @@ public class TokenService(IOptions<JwtOptions> jwtOptions, ApplicationDbContext 
             ? Result<string>.Success(verificationToken)
             : Result<string>.Failure("Failed to save verification token", 400);
     }
+
+    public async Task<Result<string>> TryIssueVerificationTokenAsync(User user, VerificationTokenType type)
+    {
+        var lastToken = await dbContext.VerificationTokens
+            .Where(t => t.UserId == user.Id && t.Type == type)
+            .OrderByDescending(t => t.CreatedAt)
+            .FirstOrDefaultAsync();
+
+        if (lastToken != null && lastToken.CreatedAt.AddMinutes(_jwtOptions.VerificationToken.CooldownMinutes) > DateTime.UtcNow)
+            return Result<string>.Failure("Please wait before requesting another verification email.", 429);
+
+        return await IssueVerificationToken(user, type);
+    }
+
 }

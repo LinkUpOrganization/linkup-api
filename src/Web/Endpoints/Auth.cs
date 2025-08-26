@@ -1,6 +1,9 @@
+using Application.Auth.Commands.ComfirmEmail;
+using Application.Auth.Commands.Login;
 using Application.Auth.Commands.LoginWithGoogle;
 using Application.Auth.Commands.RefreshToken;
 using Application.Auth.Commands.Register;
+using Application.Auth.Commands.ResendEmailVerification;
 using Application.Common.Interfaces;
 using Infrastructure.Identity;
 using MediatR;
@@ -20,9 +23,9 @@ public class Auth : EndpointGroupBase
            .MapGet(LoginWithGoogle, "login/google")
            .MapPost(RefreshToken, "refresh-token")
            .MapPost(Register, "register")
-           .MapPost(ResendVerification, "resend-verification")
-           .MapPost(ConfirmEmail, "confirm-email")
-           .MapPost(SendTestEmail, "send-test-email");
+           .MapPost(Login, "login")
+           .MapPost(ResendEmailVerification, "resend-verification")
+           .MapPost(ConfirmEmail, "confirm-email");
 
         app.MapGet("callback/google", GoogleCallback)
            .WithName("GoogleLoginCallback");
@@ -54,7 +57,7 @@ public class Auth : EndpointGroupBase
         return Results.Redirect(returnUrl);
     }
 
-    private async Task<IResult> RefreshToken(HttpContext context, ISender sender, ICookieService cookieService)
+    private async Task<IResult> RefreshToken(ISender sender, ICookieService cookieService)
     {
         var refreshToken = cookieService.GetCookie("refreshToken");
         if (string.IsNullOrEmpty(refreshToken))
@@ -74,21 +77,25 @@ public class Auth : EndpointGroupBase
         return Results.Ok(result.Value.AccessToken);
     }
 
-    private async Task<IResult> SendTestEmail(HttpContext context, ISender sender, ICookieService cookieService, IEmailService emailService)
+    private async Task<IResult> Login(LoginCommand command, ISender sender, ICookieService cookieService)
     {
-        await emailService.SendEmailAsync("rmntemporary1@gmail.com", "Hello!", "<p>Це тестовий лист</p>");
-        return Results.Ok("Email sent!");
+        var result = await sender.Send(command);
+        if (!result.IsSuccess || result.Value?.RefreshToken == null || result.Value?.AccessToken == null)
+            return Results.BadRequest(result.Error);
+
+        cookieService.SetCookie("refreshToken", result.Value.RefreshToken);
+        return Results.Ok(result.Value.AccessToken);
     }
 
-    private async Task<IResult> ResendVerification(HttpContext context, ISender sender, ICookieService cookieService, IEmailService emailService)
+    private async Task<IResult> ResendEmailVerification(ISender sender)
     {
-        await emailService.SendEmailAsync("rmntemporary1@gmail.com", "Hello!", "<p>Це тестовий лист</p>");
-        return Results.Ok("Email sent!");
+        var result = await sender.Send(new ResendEmailVerificationCommand());
+        return result.IsSuccess ? Results.Ok("Email resend successfully!") : Results.BadRequest(result.Error);
     }
 
-    private async Task<IResult> ConfirmEmail(HttpContext context, ISender sender, ICookieService cookieService, IEmailService emailService)
+    private async Task<IResult> ConfirmEmail(ConfirmEmailCommand command, ISender sender)
     {
-        await emailService.SendEmailAsync("rmntemporary1@gmail.com", "Hello!", "<p>Це тестовий лист</p>");
-        return Results.Ok("Email sent!");
+        var result = await sender.Send(command);
+        return result.IsSuccess ? Results.Ok("Email confirmed successfully") : Results.BadRequest(result.Error);
     }
 }
