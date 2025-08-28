@@ -4,6 +4,7 @@ using Application.Auth.Commands.LoginWithGoogle;
 using Application.Auth.Commands.RefreshToken;
 using Application.Auth.Commands.Register;
 using Application.Auth.Commands.ResendEmailVerification;
+using Application.Auth.Queries.GetCurrentUserInfo;
 using Application.Auth.Queries.GetEmailVerificationCooldown;
 using Application.Common.Interfaces;
 using Infrastructure.Identity;
@@ -34,7 +35,8 @@ public class Auth : EndpointGroupBase
            .MapPost(RefreshToken, "refresh-token")
            .MapPost(ResendEmailVerification, "resend-verification")
            .MapPost(ConfirmEmail, "confirm-email")
-           .MapGet(GetCooldownRemainingSeconds, "verification-cooldown");
+           .MapGet(GetCooldownRemainingSeconds, "verification-cooldown")
+           .MapGet(GetCurrentUserInfo, "me");
     }
 
     private IResult LoginWithGoogle([FromQuery] string returnUrl, LinkGenerator linkGenerator,
@@ -109,5 +111,11 @@ public class Auth : EndpointGroupBase
     {
         var result = await sender.Send(command);
         return result.IsSuccess ? Results.Ok("Email confirmed successfully") : Results.BadRequest(result.Error);
+    }
+
+    private async Task<IResult> GetCurrentUserInfo(ISender sender)
+    {
+        var result = await sender.Send(new GetCurrentUserInfoQuery());
+        return result.IsSuccess ? Results.Ok(result.Value) : Results.BadRequest(result.Error);
     }
 }

@@ -25,7 +25,7 @@ public class ResendEmailVerificationCommandHandler(
     {
         var userId = userService.Id;
         if (userId == null) return Result.Failure("Anauthorized", 401);
-        var currentUserResult = await accountService.FindUserByIdAsync(userId);
+        var currentUserResult = await accountService.GetUserByIdAsync(userId);
         if (!currentUserResult.IsSuccess || currentUserResult.Value == null)
             return Result.Failure(currentUserResult.Error!, currentUserResult.Code);
 

@@ -42,7 +42,7 @@ public class AccountService(UserManager<ApplicationUser> userManager, ITokenServ
             : Result<User>.Failure("Failed to create user", 400);
     }
 
-    public async Task<Result<User>> FindUserByIdAsync(string id)
+    public async Task<Result<User>> GetUserByIdAsync(string id)
     {
         var applicationUser = await userManager.FindByIdAsync(id);
         if (applicationUser == null) return Result<User>.Failure("User not found", 404);

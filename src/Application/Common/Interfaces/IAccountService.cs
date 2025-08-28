@@ -10,5 +10,5 @@ public interface IAccountService
     Task<Result> ConfirmEmailAsync(string verificationToken);
     Task<Result<User>> CreateUserAsync(string email, string displayName, string password);
     Task<Result<User>> LoginAsync(string email, string password);
-    Task<Result<User>> FindUserByIdAsync(string id);
+    Task<Result<User>> GetUserByIdAsync(string id);
 }
