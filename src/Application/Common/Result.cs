@@ -4,10 +4,10 @@ public class Result
 {
     public bool IsSuccess { get; set; }
     public string? Error { get; set; }
-    public int Code { get; set; }
+    public int? Code { get; set; }
 
     public static Result Success() => new() { IsSuccess = true };
-    public static Result Failure(string error, int code) => new()
+    public static Result Failure(string error, int? code = null) => new()
     {
         IsSuccess = false,
         Error = error,
@@ -25,7 +25,7 @@ public class Result<T> : Result
         Value = value
     };
 
-    public new static Result<T> Failure(string error, int code) => new()
+    public new static Result<T> Failure(string error, int? code = null) => new()
     {
         IsSuccess = false,
         Error = error,

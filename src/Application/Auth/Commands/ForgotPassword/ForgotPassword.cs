@@ -30,7 +30,7 @@ public class ForgotPasswordCommandHandler(
             return Result.Failure(userResult.Error!, userResult.Code);
 
         var remainingSeconds = await tokenService
-            .GetCooldownRemainingSecondsAsync(userResult.Value.Id, VerificationTokenType.EmailVerification);
+            .GetCooldownRemainingSecondsAsync(userResult.Value.Id, VerificationTokenType.PasswordReset);
 
         if (remainingSeconds > 0)
             return Result.Failure($"Please wait {remainingSeconds} seconds before requesting another email.", 429);

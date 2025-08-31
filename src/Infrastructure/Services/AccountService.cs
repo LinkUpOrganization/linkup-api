@@ -127,10 +127,10 @@ public class AccountService(UserManager<ApplicationUser> userManager, ITokenServ
 
     public async Task<Result<string>> RefreshTokenAsync(string refreshToken)
     {
-        var tokenInfo = await dbContext.RefreshTokens.Select(x => new { x.UserId, x.Token, x.ExpiresAt })
-            .FirstOrDefaultAsync(r => r.Token == refreshToken && r.ExpiresAt > DateTime.UtcNow);
+        var tokenInfo = await dbContext.RefreshTokens.FirstOrDefaultAsync(r => r.Token == refreshToken);
 
-        if (tokenInfo?.UserId == null) return Result<string>.Failure("Failed to refresh token", 400);
+        if (tokenInfo == null || tokenInfo.IsExpired) return Result<string>.Failure("Invalid or expired token");
+        if (tokenInfo.IsRevoked) return Result<string>.Failure("Token was revoked");
 
         var user = await userManager.FindByIdAsync(tokenInfo.UserId);
         if (user == null) return Result<string>.Failure("Failed to refresh token", 400);
