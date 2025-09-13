@@ -102,6 +102,7 @@ public class AccountService(UserManager<ApplicationUser> userManager, ITokenServ
             return Result<User>.Success(mapper.Map<User>(existingUserByLogin));
 
         var user = await FindOrCreateUserAsync(email, displayName);
+        await VerifyUserFromExternalProviderAsync(user);
 
         var info = new UserLoginInfo(provider, providerKey, provider);
         var loginResult = await userManager.AddLoginAsync(user, info);
@@ -195,5 +196,14 @@ public class AccountService(UserManager<ApplicationUser> userManager, ITokenServ
         return string.IsNullOrEmpty(token)
             ? Result<string>.Failure("Failed to generate token", 400)
             : Result<string>.Success(token);
+    }
+
+    private async Task VerifyUserFromExternalProviderAsync(ApplicationUser user)
+    {
+        if (!user.EmailConfirmed)
+        {
+            user.EmailConfirmed = true;
+            await userManager.UpdateAsync(user);
+        }
     }
 }
