@@ -1,4 +1,5 @@
 using Application.Common;
+using Application.Common.DTOs;
 using Application.Common.Interfaces;
 using MediatR;
 using PostEntity = Domain.Entities.Post;
@@ -12,7 +13,7 @@ public class CreatePostCommand : IRequest<Result<PostEntity>>
     public double? Latitude { get; set; }
     public double? Longitude { get; set; }
     public string? Address { get; set; }
-    public List<string>? PhotoUrls { get; set; }
+    public List<CloudinaryUploadDto>? ImageRecords { get; set; }
 }
 
 public class CreatePostCommandHandler(IPostService postService, IUserService userService)
@@ -29,7 +30,7 @@ public class CreatePostCommandHandler(IPostService postService, IUserService use
             Latitude = request.Latitude,
             Longitude = request.Longitude,
             Address = request.Address,
-            PhotoUrls = request.PhotoUrls,
+            ImageRecords = request.ImageRecords,
         };
 
         var postResult = await postService.CreatePostAsync(createPostDto);

@@ -1,3 +1,5 @@
+using Application.Common.DTOs;
+using Application.Common.Interfaces;
 using Application.Posts.Commands.CreatePost;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -16,18 +18,27 @@ public class Posts : EndpointGroupBase
     }
 
     private async Task<IResult> CreatePost(
-        [FromBody] CreatePostRequest request,
-        [FromServices] ISender sender
-        // [FromServices] ICloudinaryService cloudinaryService
+        [FromForm] CreatePostRequest request,
+        [FromServices] ISender sender,
+        [FromServices] ICloudinaryService cloudinaryService
         )
     {
-        var uploadedUrls = new List<string>();
+        var uploadedAssets = new List<CloudinaryUploadDto>();
 
-        foreach (var file in request.PostPhotos)
+        if (request.PostPhotos != null && request.PostPhotos.Count != 0)
         {
-            // call Cloudinary service
-            // var url = await _cloudinaryService.UploadAsync(file);
-            // uploadedUrls.Add(url);
+            foreach (var file in request.PostPhotos)
+            {
+                if (file == null || file.Length == 0) continue;
+
+                await using var stream = file.OpenReadStream();
+                var uploadResult = await cloudinaryService.UploadImageAsync(stream, file.FileName);
+
+                if (!uploadResult.IsSuccess || uploadResult.Value == null)
+                    return Results.BadRequest(uploadResult.Error);
+
+                uploadedAssets.Add(uploadResult.Value);
+            }
         }
 
         var command = new CreatePostCommand
@@ -37,7 +48,7 @@ public class Posts : EndpointGroupBase
             Latitude = request.Latitude,
             Longitude = request.Longitude,
             Address = request.Address,
-            PhotoUrls = uploadedUrls
+            ImageRecords = uploadedAssets
         };
 
         var result = await sender.Send(command);

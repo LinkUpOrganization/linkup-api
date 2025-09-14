@@ -20,10 +20,11 @@ public class PostService(ApplicationDbContext dbContext) : IPostService
                 Latitude = dto.Latitude,
                 Longitude = dto.Longitude,
                 Address = dto.Address,
-                PostPhotos = dto.PhotoUrls?
-                    .Select(url => new PostPhoto
+                PostPhotos = dto.ImageRecords?
+                    .Select(photo => new PostPhoto
                     {
-                        Url = url
+                        Url = photo.Url,
+                        PublicId = photo.PublicId
                     })
                     .ToList() ?? [],
                 CreatedAt = DateTime.UtcNow

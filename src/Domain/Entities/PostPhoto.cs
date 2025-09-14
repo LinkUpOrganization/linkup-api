@@ -5,5 +5,6 @@ public class PostPhoto
     public string Id { get; set; } = Guid.NewGuid().ToString();
     public string PostId { get; set; } = null!;
     public string Url { get; set; } = null!;
+    public string PublicId { get; set; } = null!;
     public Post Post { get; set; } = null!;
 }

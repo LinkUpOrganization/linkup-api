@@ -18,6 +18,8 @@ var configuration = builder.Configuration;
 
 builder.Services.Configure<JwtOptions>(
     builder.Configuration.GetSection(JwtOptions.SectionName));
+builder.Services.Configure<CloudinaryOptions>(
+    builder.Configuration.GetSection(CloudinaryOptions.SectionName));
 builder.Services.Configure<ClientOptions>(
     builder.Configuration.GetSection(ClientOptions.SectionName));
 builder.Services.AddHttpContextAccessor();
@@ -77,7 +79,7 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.Configure<SmtpSettings>(configuration.GetSection("SmtpSettings"));
 builder.Services.AddScoped<IEmailService, EmailService>();
-builder.Services.AddScoped<IMediaService, MediaService>();
+builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
 builder.Services.AddScoped<IPostService, PostService>();
 builder.Services.AddScoped<IUserService, CurrentUser>();
 builder.Services.AddScoped<IVerificationLinkService, VerificationLinkService>();
