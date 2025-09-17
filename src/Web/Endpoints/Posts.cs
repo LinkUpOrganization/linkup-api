@@ -1,6 +1,7 @@
 using Application.Common.DTOs;
 using Application.Common.Interfaces;
 using Application.Posts.Commands.CreatePost;
+using Application.Posts.Queries.GetPosts;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Web.DTOs;
@@ -12,6 +13,9 @@ public class Posts : EndpointGroupBase
 {
     public override void Map(WebApplication app)
     {
+        app.MapGroup(this)
+            .MapGet(GetPosts, "");
+
         app.MapGroup(this)
            .RequireAuthorization()
            .MapPost(CreatePost, "");
@@ -52,6 +56,22 @@ public class Posts : EndpointGroupBase
         };
 
         var result = await sender.Send(command);
+
+        return result.IsSuccess ? Results.Ok(result.Value) : Results.BadRequest(result.Error);
+    }
+
+    private async Task<IResult> GetPosts(
+        ISender sender,
+        [FromQuery] bool ascending = false,
+        [FromQuery] string? cursor = null,
+        [FromQuery] int pageSize = 10)
+    {
+        var result = await sender.Send(new GetPostsQuery
+        {
+            Ascending = ascending,
+            Cursor = cursor,
+            PageSize = pageSize
+        });
 
         return result.IsSuccess ? Results.Ok(result.Value) : Results.BadRequest(result.Error);
     }

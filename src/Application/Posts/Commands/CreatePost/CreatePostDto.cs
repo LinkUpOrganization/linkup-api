@@ -10,5 +10,5 @@ public class CreatePostDto
     public double? Latitude { get; set; }
     public double? Longitude { get; set; }
     public string? Address { get; set; }
-    public List<CloudinaryUploadDto>? ImageRecords { get; set; }
+    public List<CloudinaryUploadDto>? Photos { get; set; }
 }

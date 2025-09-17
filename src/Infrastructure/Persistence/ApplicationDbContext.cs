@@ -23,8 +23,9 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             entity.HasOne<ApplicationUser>()
                 .WithMany()
                 .HasForeignKey(p => p.AuthorId);
+
+            entity.HasIndex(p => new { p.CreatedAt, p.Id });
         });
-        base.OnModelCreating(builder);
 
         builder.Entity<RefreshToken>(entity =>
         {

@@ -5,7 +5,7 @@ using MediatR;
 
 namespace Application.Posts.Commands.CreatePost;
 
-public class CreatePostCommand : IRequest<Result<PostResponseDto>>
+public class CreatePostCommand : IRequest<Result<string>>
 {
     public string Title { get; set; } = null!;
     public string? Content { get; set; }
@@ -16,9 +16,9 @@ public class CreatePostCommand : IRequest<Result<PostResponseDto>>
 }
 
 public class CreatePostCommandHandler(IPostService postService, IUserService userService)
-    : IRequestHandler<CreatePostCommand, Result<PostResponseDto>>
+    : IRequestHandler<CreatePostCommand, Result<string>>
 {
-    public async Task<Result<PostResponseDto>> Handle(CreatePostCommand request, CancellationToken ct)
+    public async Task<Result<string>> Handle(CreatePostCommand request, CancellationToken ct)
     {
         var userId = userService.Id!;
         var createPostDto = new CreatePostDto
@@ -29,13 +29,13 @@ public class CreatePostCommandHandler(IPostService postService, IUserService use
             Latitude = request.Latitude,
             Longitude = request.Longitude,
             Address = request.Address,
-            ImageRecords = request.ImageRecords,
+            Photos = request.ImageRecords,
         };
 
         var postResult = await postService.CreatePostAsync(createPostDto);
 
         return postResult.IsSuccess && postResult.Value != null
-            ? Result<PostResponseDto>.Success(postResult.Value)
-            : Result<PostResponseDto>.Failure(postResult.Error!);
+            ? Result<string>.Success(postResult.Value)
+            : Result<string>.Failure(postResult.Error!);
     }
 }

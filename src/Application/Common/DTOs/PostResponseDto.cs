@@ -11,16 +11,31 @@ public class PostResponseDto
     public double? Latitude { get; set; }
     public double? Longitude { get; set; }
     public string? Address { get; set; }
-    public string AuthorId { get; set; } = null!;
     public DateTime CreatedAt { get; set; }
+
     public List<PostPhotoDto> Photos { get; set; } = new();
+
+    public AuthorDto Author { get; set; } = null!;
 }
+
+public class AuthorDto
+{
+    public string Id { get; set; } = null!;
+    public string DisplayName { get; set; } = null!;
+}
+
 
 public class PostPhotoDto
 {
     public string Id { get; set; } = null!;
     public string Url { get; set; } = null!;
     public string PublicId { get; set; } = null!;
+}
+
+public class PagedPostsDto
+{
+    public List<PostResponseDto> Items { get; set; } = [];
+    public string? NextCursor { get; set; }
 }
 
 public class Mapping : Profile
