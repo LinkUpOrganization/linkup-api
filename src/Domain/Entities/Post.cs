@@ -1,3 +1,5 @@
+using NetTopologySuite.Geometries;
+
 namespace Domain.Entities;
 
 public class Post
@@ -6,8 +8,7 @@ public class Post
     public string AuthorId { get; set; } = null!;
     public string Title { get; set; } = null!;
     public string? Content { get; set; }
-    public double? Latitude { get; set; }
-    public double? Longitude { get; set; }
+    public Point? Location { get; set; }
     public string? Address { get; set; }
     public List<PostPhoto> PostPhotos { get; set; } = [];
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

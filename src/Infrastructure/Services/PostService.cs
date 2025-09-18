@@ -9,6 +9,8 @@ using Infrastructure.Identity;
 using Infrastructure.Persistence;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using NetTopologySuite;
+using NetTopologySuite.Geometries;
 
 namespace Infrastructure.Services;
 
@@ -23,13 +25,16 @@ public class PostService(ApplicationDbContext dbContext, IMapper mapper, UserMan
             if (creator == null)
                 return Result<string>.Failure("Author not found");
 
+            var geometryFactory = NtsGeometryServices.Instance.CreateGeometryFactory(srid: 4326);
+
             var post = new Post
             {
                 AuthorId = dto.AuthorId,
                 Title = dto.Title,
                 Content = dto.Content,
-                Latitude = dto.Latitude,
-                Longitude = dto.Longitude,
+                Location = (dto.Latitude.HasValue && dto.Longitude.HasValue)
+                    ? geometryFactory.CreatePoint(new Coordinate(dto.Longitude.Value, dto.Latitude.Value))
+                    : null,
                 Address = dto.Address,
                 PostPhotos = dto.Photos?
                     .Select(photo => new PostPhoto

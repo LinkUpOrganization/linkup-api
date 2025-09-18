@@ -25,6 +25,12 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
                 .HasForeignKey(p => p.AuthorId);
 
             entity.HasIndex(p => new { p.CreatedAt, p.Id });
+
+            // spatial column (geometry) + index
+            // 4326 → SRID (Spatial Reference System Identifier) (global standart for latitude longtitude)
+            entity.Property(p => p.Location).HasColumnType("geography (Point,4326)");
+            // Generalized Search Tree
+            entity.HasIndex(p => p.Location).HasMethod("GIST");
         });
 
         builder.Entity<RefreshToken>(entity =>

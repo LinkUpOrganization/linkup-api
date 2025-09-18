@@ -43,7 +43,10 @@ public class Mapping : Profile
     public Mapping()
     {
         CreateMap<Domain.Entities.Post, PostResponseDto>()
-            .ForMember(dest => dest.Photos, opt => opt.MapFrom(src => src.PostPhotos));
+            .ForMember(dest => dest.Photos, opt => opt.MapFrom(src => src.PostPhotos))
+            .ForMember(dest => dest.Latitude, opt => opt.MapFrom(src => src.Location != null ? src.Location.Y : (double?)null))
+            .ForMember(dest => dest.Longitude, opt => opt.MapFrom(src => src.Location != null ? src.Location.X : (double?)null));
+
         CreateMap<PostPhoto, PostPhotoDto>();
     }
 }
