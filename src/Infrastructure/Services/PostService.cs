@@ -1,6 +1,7 @@
 using Application.Common;
 using Application.Common.DTOs;
 using Application.Common.Interfaces;
+using Application.Common.Models;
 using Application.Posts.Commands.CreatePost;
 using Application.Posts.Queries.GetPosts;
 using AutoMapper;
@@ -14,8 +15,8 @@ using NetTopologySuite.Geometries;
 
 namespace Infrastructure.Services;
 
-public class PostService(ApplicationDbContext dbContext, IMapper mapper, UserManager<ApplicationUser> userManager)
-    : IPostService
+public class PostService(ApplicationDbContext dbContext, IMapper mapper, UserManager<ApplicationUser> userManager,
+    ICurrentUserService currentUser) : IPostService
 {
     public async Task<Result<string>> CreatePostAsync(CreatePostDto dto)
     {
@@ -63,6 +64,7 @@ public class PostService(ApplicationDbContext dbContext, IMapper mapper, UserMan
     {
         var postsQuery = dbContext.Posts
             .Include(p => p.PostPhotos)
+            .Include(p => p.PostReactions)
             .AsQueryable();
 
         // Sorting
@@ -103,6 +105,16 @@ public class PostService(ApplicationDbContext dbContext, IMapper mapper, UserMan
             .ToDictionaryAsync(u => u.Id, ct);
 
 
+        // Liked posts only if authorized
+        List<string> likedPostIds = [];
+        if (currentUser?.Id is not null)
+        {
+            likedPostIds = await dbContext.PostReactions
+                .Where(r => r.UserId == currentUser.Id && posts.Select(p => p.Id).Contains(r.PostId))
+                .Select(r => r.PostId)
+                .ToListAsync(ct);
+        }
+
         var convertedPosts = posts.Select(p =>
         {
             var dto = mapper.Map<PostResponseDto>(p);
@@ -114,6 +126,7 @@ public class PostService(ApplicationDbContext dbContext, IMapper mapper, UserMan
                     DisplayName = author.DisplayName ?? "Unknown"
                 };
             }
+            dto.IsLikedByCurrentUser = likedPostIds.Contains(p.Id);
             return dto;
         }).ToList();
 
