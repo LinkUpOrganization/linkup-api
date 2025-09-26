@@ -13,4 +13,5 @@ public class Post
     public List<PostPhoto> PostPhotos { get; set; } = [];
     public List<PostReaction> PostReactions { get; set; } = [];
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime? UpdatedAt { get; set; }
 }

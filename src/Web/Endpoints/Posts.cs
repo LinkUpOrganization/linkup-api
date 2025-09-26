@@ -1,13 +1,13 @@
 using Application.Common.DTOs;
 using Application.Common.Interfaces;
 using Application.Posts.Commands.CreatePost;
+using Application.Posts.Commands.EditPost;
 using Application.Posts.Commands.ToggleReaction;
+using Application.Posts.Queries.GetPost;
 using Application.Posts.Queries.GetPosts;
-using Application.Users.Commands.ToggleFollow;
 using Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Org.BouncyCastle.Ocsp;
 using Web.DTOs;
 using Web.Infrastructure;
 
@@ -23,6 +23,8 @@ public class Posts : EndpointGroupBase
         app.MapGroup(this)
            .RequireAuthorization()
            .MapPost(CreatePost, "")
+           .MapPatch(EditPost, "{postId}")
+           .MapGet(GetPost, "{postId}")
            .MapPost(ToggleReaction, "{postId}/toggle-reaction");
     }
 
@@ -33,6 +35,9 @@ public class Posts : EndpointGroupBase
         )
     {
         var uploadedAssets = new List<CloudinaryUploadDto>();
+
+        if (request.PostPhotos != null && request.PostPhotos.Count > 5)
+            return Results.BadRequest("You can't upload more that 5 photos.");
 
         if (request.PostPhotos != null && request.PostPhotos.Count != 0)
         {
@@ -65,6 +70,56 @@ public class Posts : EndpointGroupBase
         return result.IsSuccess ? Results.Ok(result.Value) : Results.BadRequest(result.Error);
     }
 
+    private async Task<IResult> EditPost(
+        [FromForm] EditPostRequest request,
+        [FromServices] ISender sender,
+        [FromServices] ICloudinaryService cloudinaryService,
+        [FromServices] IPostService postService,
+        [FromRoute] string postId
+        )
+    {
+        var uploadedAssets = new List<CloudinaryUploadDto>();
+
+        if (request.PhotosToAdd != null && request.PhotosToAdd.Count > 0)
+        {
+            await postService.ValidatePhotoLimitAsync(postId, request.PhotosToAdd.Count,
+                request.PostPhotosToDelete, CancellationToken.None);
+            return Results.BadRequest("You can't upload more that 5 photos.");
+        }
+
+        if (request.PhotosToAdd != null && request.PhotosToAdd.Count != 0)
+        {
+            foreach (var file in request.PhotosToAdd)
+            {
+                if (file == null || file.Length == 0) continue;
+
+                await using var stream = file.OpenReadStream();
+                var uploadResult = await cloudinaryService.UploadImageAsync(stream, file.FileName);
+
+                if (!uploadResult.IsSuccess || uploadResult.Value == null)
+                    return Results.BadRequest(uploadResult.Error);
+
+                uploadedAssets.Add(uploadResult.Value);
+            }
+        }
+
+        var command = new EditPostCommand
+        {
+            PostId = postId,
+            Title = request.Title,
+            Content = request.Content,
+            Latitude = request.Latitude,
+            Longitude = request.Longitude,
+            Address = request.Address,
+            PhotosToAdd = uploadedAssets,
+            PhotosToDelete = request.PostPhotosToDelete
+        };
+
+        var result = await sender.Send(command);
+
+        return result.IsSuccess ? Results.Ok() : Results.BadRequest(result.Error);
+    }
+
     private async Task<IResult> GetPosts(
         ISender sender,
         [FromQuery] string filter = "recent",
@@ -91,6 +146,11 @@ public class Posts : EndpointGroupBase
         };
         var result = await sender.Send(query);
         return result.IsSuccess ? Results.Ok(result.Value) : Results.BadRequest(result.Error);
+    }
+    private async Task<IResult> GetPost(ISender sender, [FromRoute] string postId)
+    {
+        var result = await sender.Send(new GetPostQuery { PostId = postId });
+        return result.IsSuccess ? Results.Ok(result.Value) : Results.NotFound(result.Error);
     }
 
     private async Task<IResult> ToggleReaction(ISender sender, [FromRoute] string postId, [FromBody] ToggleLikeRequest request)

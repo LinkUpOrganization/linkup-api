@@ -1,8 +1,8 @@
 using Application.Common;
 using Application.Common.DTOs;
 using Application.Common.Interfaces;
-using Application.Common.Models;
 using Application.Posts.Commands.CreatePost;
+using Application.Posts.Commands.EditPost;
 using Application.Posts.Queries.GetPosts;
 using AutoMapper;
 using Domain.Entities;
@@ -11,14 +11,13 @@ using Infrastructure.Identity;
 using Infrastructure.Persistence;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Memory;
 using NetTopologySuite;
 using NetTopologySuite.Geometries;
 
 namespace Infrastructure.Services;
 
 public class PostService(ApplicationDbContext dbContext, IMapper mapper, UserManager<ApplicationUser> userManager,
-    ICurrentUserService currentUser) : IPostService
+    ICurrentUserService currentUser, ICloudinaryService cloudinaryService) : IPostService
 {
     public async Task<Result<string>> CreatePostAsync(CreatePostDto dto)
     {
@@ -195,9 +194,6 @@ public class PostService(ApplicationDbContext dbContext, IMapper mapper, UserMan
         };
     }
 
-
-
-
     public async Task<Result> TogglePostReactionAsync(string postId, string userId, bool isLiked)
     {
         var post = await dbContext.Posts.FirstOrDefaultAsync(x => x.Id == postId);
@@ -231,4 +227,100 @@ public class PostService(ApplicationDbContext dbContext, IMapper mapper, UserMan
         return postsQuery;
     }
 
+    public async Task<Result> EditPostAsync(EditPostDto dto)
+    {
+        try
+        {
+            var userId = currentUser.Id!;
+            var existingPost = await dbContext.Posts
+                .Include(p => p.PostPhotos)
+                .FirstOrDefaultAsync(p => p.Id == dto.PostId);
+
+            if (existingPost == null)
+                return Result.Failure("Post not found");
+
+            if (userId != existingPost.AuthorId)
+                return Result.Failure("Access denied");
+
+            // --- Text data ---
+            if (!string.IsNullOrWhiteSpace(dto.Title))
+                existingPost.Title = dto.Title;
+
+            if (!string.IsNullOrWhiteSpace(dto.Content))
+                existingPost.Content = dto.Content;
+
+            if (!string.IsNullOrWhiteSpace(dto.Address))
+                existingPost.Address = dto.Address;
+
+            // --- Location ---
+            if (dto.Latitude.HasValue && dto.Longitude.HasValue)
+            {
+                var geometryFactory = NtsGeometryServices.Instance.CreateGeometryFactory(srid: 4326);
+                existingPost.Location = geometryFactory.CreatePoint(
+                    new Coordinate(dto.Longitude.Value, dto.Latitude.Value)
+                );
+            }
+
+            // --- Photo ---
+            if (dto.PhotosToDelete is not null && dto.PhotosToDelete.Count > 0)
+            {
+                foreach (var publicId in dto.PhotosToDelete)
+                    await cloudinaryService.DeleteImageAsync(publicId);
+
+                existingPost.PostPhotos.RemoveAll(p => dto.PhotosToDelete.Contains(p.PublicId));
+            }
+
+            if (dto.PhotosToAdd is not null && dto.PhotosToAdd.Count > 0)
+            {
+                foreach (var photo in dto.PhotosToAdd)
+                {
+                    existingPost.PostPhotos.Add(new PostPhoto
+                    {
+                        PostId = dto.PostId,
+                        Url = photo.Url,
+                        PublicId = photo.PublicId
+                    });
+                }
+            }
+
+            existingPost.UpdatedAt = DateTime.UtcNow;
+
+            var saved = await dbContext.SaveChangesAsync() > 0;
+            if (!saved)
+                return Result.Failure("Failed to update post");
+
+            return Result.Success();
+        }
+        catch (Exception ex)
+        {
+            return Result.Failure($"Failed to update post: {ex.Message}");
+        }
+    }
+
+    public async Task<Result<PostResponseDto>> GetPostByIdAsync(string postId, CancellationToken ct)
+    {
+        var post = await dbContext.Posts.Include(p => p.PostPhotos).FirstOrDefaultAsync(p => p.Id == postId, ct);
+        if (post == null) return Result<PostResponseDto>.Failure("Post not found");
+
+        return Result<PostResponseDto>.Success(mapper.Map<PostResponseDto>(post));
+    }
+
+    public async Task<Result> ValidatePhotoLimitAsync(string postId, int photosToAddCount, List<string>? photosToDeleteList, CancellationToken ct)
+    {
+        var post = await dbContext.Posts.FirstOrDefaultAsync(p => p.Id == postId, ct);
+        if (post == null) return Result.Failure("Post not found");
+
+        if (photosToDeleteList != null)
+        {
+            var missingPhotos = photosToDeleteList.Where(publicId => !post.PostPhotos.Any(p => p.PublicId == publicId));
+            if (missingPhotos.Any()) return Result.Failure("Invalid set of photos. Some photos not found in post.");
+        }
+
+        var resultingPhotoNumber = post.PostPhotos.Count + photosToAddCount - photosToDeleteList?.Count ?? 0;
+
+        if (resultingPhotoNumber > 5)
+            return Result.Failure("You can't upload more that 5 photos.");
+
+        return Result.Success();
+    }
 }
