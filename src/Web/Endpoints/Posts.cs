@@ -19,8 +19,8 @@ public class Posts : EndpointGroupBase
     public override void Map(WebApplication app)
     {
         app.MapGroup(this)
-            .MapGet(GetPosts, "")
-            .MapDelete(DeletePost, "{postId}")
+           .MapGet(GetPosts, "")
+           .MapDelete(DeletePost, "{postId}")
            .MapGet(GetPost, "{postId}");
 
         app.MapGroup(this)

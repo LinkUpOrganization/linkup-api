@@ -309,14 +309,15 @@ public class PostService(ApplicationDbContext dbContext, IMapper mapper, UserMan
     {
         var post = await dbContext.Posts.FirstOrDefaultAsync(p => p.Id == postId, ct);
         if (post == null) return Result.Failure("Post not found");
+        var uniquePhotosToDelete = photosToDeleteList?.Distinct().ToList() ?? [];
 
-        if (photosToDeleteList != null)
+        if (uniquePhotosToDelete.Count > 0)
         {
-            var missingPhotos = photosToDeleteList.Where(publicId => !post.PostPhotos.Any(p => p.PublicId == publicId));
+            var missingPhotos = uniquePhotosToDelete.Where(publicId => !post.PostPhotos.Any(p => p.PublicId == publicId));
             if (missingPhotos.Any()) return Result.Failure("Invalid set of photos. Some photos not found in post.");
         }
 
-        var resultingPhotoNumber = post.PostPhotos.Count + photosToAddCount - photosToDeleteList?.Count ?? 0;
+        var resultingPhotoNumber = post.PostPhotos.Count + photosToAddCount - uniquePhotosToDelete?.Count ?? 0;
 
         if (resultingPhotoNumber > 5)
             return Result.Failure("You can't upload more that 5 photos.");
