@@ -31,7 +31,7 @@ public static class IEndpointRouteBuilderExtensions
         Guard.Against.AnonymousMethod(handler);
 
         builder.MapPut(pattern, handler)
-            .WithName(handler.Method.Name);
+            .WithName(handler.Method.Name).DisableAntiforgery();
 
         return builder;
     }
@@ -41,7 +41,7 @@ public static class IEndpointRouteBuilderExtensions
         Guard.Against.AnonymousMethod(handler);
 
         builder.MapPatch(pattern, handler)
-            .WithName(handler.Method.Name);
+            .WithName(handler.Method.Name).DisableAntiforgery();
 
         return builder;
     }
@@ -51,7 +51,7 @@ public static class IEndpointRouteBuilderExtensions
         Guard.Against.AnonymousMethod(handler);
 
         builder.MapDelete(pattern, handler)
-            .WithName(handler.Method.Name);
+            .WithName(handler.Method.Name).DisableAntiforgery();
 
         return builder;
     }
