@@ -85,9 +85,10 @@ public class Posts : EndpointGroupBase
 
         if (request.PhotosToAdd != null && request.PhotosToAdd.Count > 0)
         {
-            await postService.ValidatePhotoLimitAsync(postId, request.PhotosToAdd.Count,
+            var validationResult = await postService.ValidatePhotoLimitAsync(postId, request.PhotosToAdd.Count,
                 request.PostPhotosToDelete, CancellationToken.None);
-            return Results.BadRequest($"You can't upload more that {PostConstants.MaxPhotosPerPost} photos.");
+            if (!validationResult.IsSuccess)
+                return Results.BadRequest($"You can't upload more that {PostConstants.MaxPhotosPerPost} photos.");
         }
 
         if (request.PhotosToAdd != null && request.PhotosToAdd.Count != 0)
