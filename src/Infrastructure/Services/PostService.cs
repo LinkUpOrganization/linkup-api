@@ -81,7 +81,11 @@ public class PostService(ApplicationDbContext dbContext, IMapper mapper, UserMan
             .Include(p => p.PostReactions)
             .Where(p => p.CreatedAt >= oneWeekAgo)
             .OrderByDescending(p => p.PostReactions.Count)
-            .ThenByDescending(p => p.CreatedAt);
+            .ThenByDescending(p => p.CreatedAt).AsQueryable();
+
+        if (query.Filter.Latitude.HasValue && query.Filter.Longitude.HasValue && query.Filter.RadiusKm.HasValue)
+            postsQuery = ApplyLocationFilter(query.Filter.Latitude.Value, query.Filter.Longitude.Value,
+                query.Filter.RadiusKm.Value, postsQuery);
 
         var posts = await postsQuery
             .Skip(offset)
@@ -121,6 +125,9 @@ public class PostService(ApplicationDbContext dbContext, IMapper mapper, UserMan
         if (!string.IsNullOrEmpty(query.Cursor))
             postsQuery = ApplyCursorPaging(query.Cursor, postsQuery);
 
+        if (query.Filter.Latitude.HasValue && query.Filter.Longitude.HasValue && query.Filter.RadiusKm.HasValue)
+            postsQuery = ApplyLocationFilter(query.Filter.Latitude.Value, query.Filter.Longitude.Value,
+                query.Filter.RadiusKm.Value, postsQuery);
 
         var posts = await postsQuery
             .Take(query.PageSize)
@@ -145,6 +152,11 @@ public class PostService(ApplicationDbContext dbContext, IMapper mapper, UserMan
 
         if (!string.IsNullOrEmpty(query.Cursor))
             postsQuery = ApplyCursorPaging(query.Cursor, postsQuery);
+
+        if (query.Filter.Latitude.HasValue && query.Filter.Longitude.HasValue && query.Filter.RadiusKm.HasValue)
+            postsQuery = ApplyLocationFilter(query.Filter.Latitude.Value, query.Filter.Longitude.Value,
+                query.Filter.RadiusKm.Value, postsQuery);
+
 
         var posts = await postsQuery
             .Take(query.PageSize)
@@ -224,6 +236,18 @@ public class PostService(ApplicationDbContext dbContext, IMapper mapper, UserMan
                 p.CreatedAt < cursorDate ||
                 (p.CreatedAt == cursorDate && string.Compare(p.Id, cursorId) < 0));
         }
+
+        return postsQuery;
+    }
+
+    private static IQueryable<Post> ApplyLocationFilter(double latitude, double longitude, double radiusKm, IQueryable<Post> postsQuery)
+    {
+        var geometryFactory = NtsGeometryServices.Instance.CreateGeometryFactory(srid: 4326);
+        var center = geometryFactory.CreatePoint(
+            new Coordinate(longitude, latitude));
+
+        postsQuery = postsQuery.Where(p => p.Location != null &&
+                                        p.Location.IsWithinDistance(center, radiusKm * 1000));
 
         return postsQuery;
     }

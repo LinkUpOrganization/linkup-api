@@ -127,9 +127,9 @@ public class Posts : EndpointGroupBase
     private async Task<IResult> GetPosts(
         ISender sender,
         [FromQuery] string filter = "recent",
-        [FromQuery] double? lat = null,
-        [FromQuery] double? lng = null,
-        [FromQuery] double? radius = null,
+        [FromQuery] double? latitude = null,
+        [FromQuery] double? longitude = null,
+        [FromQuery] double radius = 1,
         [FromQuery] string? cursor = null,
         [FromQuery] int pageSize = 10)
     {
@@ -141,8 +141,8 @@ public class Posts : EndpointGroupBase
             Filter = new PostFilter
             {
                 Type = filterType,
-                Latitude = lat,
-                Longitude = lng,
+                Latitude = latitude,
+                Longitude = longitude,
                 RadiusKm = radius
             },
             Cursor = cursor,
