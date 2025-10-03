@@ -384,24 +384,48 @@ public class PostService(ApplicationDbContext dbContext, IMapper mapper, UserMan
             _ => 0.01
         };
 
-        var sql = $@"
-            SELECT 
-                ST_SnapToGrid(""Location""::geometry, {cellSize}, {cellSize}) AS ""Geom"",
-                COUNT(*) AS ""PointCount""
-            FROM ""Posts""
-            WHERE ST_Within(
-                ""Location""::geometry,
-                ST_MakeEnvelope(
-                    {minLon.ToString(CultureInfo.InvariantCulture)},
-                    {minLat.ToString(CultureInfo.InvariantCulture)},
-                    {maxLon.ToString(CultureInfo.InvariantCulture)},
-                    {maxLat.ToString(CultureInfo.InvariantCulture)},
-                    4326
-                )
-            )
-            GROUP BY ST_SnapToGrid(""Location""::geometry, {cellSize}, {cellSize})
-        ";
+        string sql;
 
+        if (zoom >= 5)
+        {
+            sql = $@"
+                SELECT 
+                    ST_Centroid(ST_Collect(""Location""::geometry)) AS ""Geom"",
+                    COUNT(*) AS ""PointCount""
+                FROM ""Posts""
+                WHERE ST_Within(
+                    ""Location""::geometry,
+                    ST_MakeEnvelope(
+                        {minLon.ToString(CultureInfo.InvariantCulture)},
+                        {minLat.ToString(CultureInfo.InvariantCulture)},
+                        {maxLon.ToString(CultureInfo.InvariantCulture)},
+                        {maxLat.ToString(CultureInfo.InvariantCulture)},
+                        4326
+                    )
+                )
+                GROUP BY ST_SnapToGrid(""Location""::geometry, {cellSize}, {cellSize})
+            ";
+        }
+        else
+        {
+            sql = $@"
+                SELECT 
+                    ST_SnapToGrid(""Location""::geometry, {cellSize}, {cellSize}) AS ""Geom"",
+                    COUNT(*) AS ""PointCount""
+                FROM ""Posts""
+                WHERE ST_Within(
+                    ""Location""::geometry,
+                    ST_MakeEnvelope(
+                        {minLon.ToString(CultureInfo.InvariantCulture)},
+                        {minLat.ToString(CultureInfo.InvariantCulture)},
+                        {maxLon.ToString(CultureInfo.InvariantCulture)},
+                        {maxLat.ToString(CultureInfo.InvariantCulture)},
+                        4326
+                    )
+                )
+                GROUP BY ST_SnapToGrid(""Location""::geometry, {cellSize}, {cellSize})
+            ";
+        }
 
         var debug = await dbContext.HeatmapPoints
             .FromSqlRaw(sql)
