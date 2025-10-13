@@ -8,6 +8,7 @@ using Infrastructure.Identity.Mappings;
 using Infrastructure.Persistence;
 using Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -126,6 +127,14 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors("CorsPolicy");
+
+if (!app.Environment.IsDevelopment())
+{
+    app.UseForwardedHeaders(new ForwardedHeadersOptions
+    {
+        ForwardedHeaders = ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedFor
+    });
+}
 
 app.UseExceptionHandler();
 app.UseAuthentication();

@@ -46,15 +46,23 @@ public class Auth : EndpointGroupBase
            .MapPost(Logout, "logout");
     }
 
-    private IResult LoginWithGoogle([FromQuery] string returnUrl, LinkGenerator linkGenerator,
-        SignInManager<ApplicationUser> signInManager, HttpContext context)
+    private IResult LoginWithGoogle(
+        [FromQuery] string returnUrl,
+        LinkGenerator linkGenerator,
+        SignInManager<ApplicationUser> signInManager,
+        HttpContext context)
     {
-        var properties = signInManager.ConfigureExternalAuthenticationProperties("Google",
-            linkGenerator.GetPathByName(context, "GoogleLoginCallback")
-            + $"?returnUrl={returnUrl}");
+        var callbackUrl = linkGenerator.GetUriByName(
+            httpContext: context,
+            endpointName: "GoogleLoginCallback",
+            values: new { returnUrl }
+        );
+
+        var properties = signInManager.ConfigureExternalAuthenticationProperties("Google", callbackUrl);
 
         return Results.Challenge(properties, ["Google"]);
     }
+
 
     private async Task<IResult> GoogleCallback([FromQuery] string returnUrl, HttpContext context,
         ISender sender, ICookieService cookieService)
