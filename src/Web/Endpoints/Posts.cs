@@ -28,6 +28,7 @@ public class Posts : EndpointGroupBase
            .MapGet(GetHeatmapPoints, "heatmap-points")
            .MapGet(GetPostClusters, "clusters")
            .MapDelete(DeletePost, "{postId}")
+           .MapDelete(DeletePostComment, "{postId}/comments/{commentId}")
            .MapGet(GetPost, "{postId}")
            .MapGet(GetPostComments, "{postId}/comments");
 
@@ -195,6 +196,11 @@ public class Posts : EndpointGroupBase
         return result.IsSuccess ? Results.Ok() : Results.BadRequest(result.Error);
     }
 
+    private async Task<IResult> DeletePostComment(string postId, string commentId, ISender sender)
+    {
+        var result = await sender.Send(new DeletePostCommentCommand { CommentId = commentId });
+        return result.IsSuccess ? Results.Ok() : Results.BadRequest(result.Error);
+    }
 
     private async Task<IResult> GetHeatmapPoints(
         ISender sender, [FromQuery] double minLat, [FromQuery] double minLon,

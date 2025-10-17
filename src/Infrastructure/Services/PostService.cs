@@ -599,4 +599,14 @@ public class PostService(ApplicationDbContext dbContext, IMapper mapper, UserMan
         return Result<List<PostCommentResponseDto>>.Success(postComments);
     }
 
+    public async Task<Result> DeletePostCommentAsync(string commentId)
+    {
+        var comment = await dbContext.PostCommnets.FirstOrDefaultAsync(pc => pc.Id == commentId);
+        if (comment == null) return Result.Failure("Comment not found");
+        if (comment.AuthorId != currentUser.Id!) return Result.Failure("Access denied");
+
+        dbContext.Remove(comment);
+        var result = await dbContext.SaveChangesAsync() > 0;
+        return result ? Result.Success() : Result.Failure("Failed to delete the comment");
+    }
 }
