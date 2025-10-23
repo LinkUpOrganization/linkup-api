@@ -11,6 +11,7 @@ using Application.Posts.Queries.GetPostClusters;
 using Application.Posts.Queries.GetPostComments;
 using Application.Posts.Queries.GetPosts;
 using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using Domain.Constants;
 using Domain.Entities;
 using Domain.Enums;
@@ -611,40 +612,37 @@ public class PostService(ApplicationDbContext dbContext, IMapper mapper, UserMan
 
     public async Task<Result<List<PostCommentResponseDto>>> GetPostCommentsAsync(string postId)
     {
-        var post = await dbContext.Posts
-            .Include(p => p.PostComments)
-            .ThenInclude(c => c.PostCommentReactions)
-            .FirstOrDefaultAsync(p => p.Id == postId);
+        var userId = currentUser.Id;
+        var comments = await dbContext.PostComments
+            .Where(c => c.PostId == postId)
+            .ProjectTo<PostCommentResponseDto>(mapper.ConfigurationProvider)
+            .OrderByDescending(c => c.CreatedAt)
+            .ToListAsync();
 
-        if (post == null)
-            return Result<List<PostCommentResponseDto>>.Failure("Post not found");
-
-        var authorIds = post.PostComments
-            .Select(pc => pc.AuthorId)
-            .Distinct()
-            .ToList();
+        var authorIds = comments.Select(c => c.Author.Id).Distinct().ToList();
 
         var authors = await userManager.Users
             .Where(u => authorIds.Contains(u.Id))
-            .ToDictionaryAsync(u => u.Id);
+            .ToDictionaryAsync(u => u.Id, u => u.DisplayName);
 
-        var postComments = mapper.Map<List<PostCommentResponseDto>>(post.PostComments);
+        var commentIds = comments.Select(c => c.Id).ToList();
 
-        foreach (var commentDto in postComments)
+        var likedCommentIds = await dbContext.PostCommentReactions
+            .Where(r => r.UserId == userId && commentIds.Contains(r.PostCommentId))
+            .Select(r => r.PostCommentId)
+            .ToListAsync();
+
+        foreach (var comment in comments)
         {
-            var originalComment = post.PostComments.First(c => c.Id == commentDto.Id);
-            if (authors.TryGetValue(originalComment.AuthorId, out var author))
-            {
-                commentDto.Author = new AuthorDto
-                {
-                    Id = author.Id,
-                    DisplayName = author.DisplayName
-                };
-            }
+            if (authors.TryGetValue(comment.Author.Id, out var displayName))
+                comment.Author.DisplayName = displayName;
+            if (userId != null)
+                comment.IsLikedByCurrentUser = likedCommentIds.Contains(comment.Id);
         }
 
-        return Result<List<PostCommentResponseDto>>.Success(postComments);
+        return Result<List<PostCommentResponseDto>>.Success(comments);
     }
+
 
     public async Task<Result> DeletePostCommentAsync(string commentId)
     {
@@ -675,4 +673,5 @@ public class PostService(ApplicationDbContext dbContext, IMapper mapper, UserMan
 
         return result ? Result.Success() : Result.Failure("Failed to toggle reaction");
     }
+
 }

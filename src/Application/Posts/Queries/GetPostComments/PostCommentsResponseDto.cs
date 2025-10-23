@@ -21,6 +21,13 @@ public class Mapping : Profile
 {
     public Mapping()
     {
-        CreateMap<PostComment, PostCommentResponseDto>();
+        CreateMap<PostComment, PostCommentResponseDto>()
+            .ForMember(dest => dest.ReactionCount,
+                opt => opt.MapFrom(src => src.PostCommentReactions.Count))
+                        .ForMember(dest => dest.Author,
+                opt => opt.MapFrom(src => new AuthorDto
+                {
+                    Id = src.AuthorId,
+                }));
     }
 }
