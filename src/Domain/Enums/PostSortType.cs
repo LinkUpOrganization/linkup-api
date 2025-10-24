@@ -1,6 +1,6 @@
 namespace Domain.Enums;
 
-public enum PostFilterType
+public enum PostSortType
 {
     Recent,
     Top,

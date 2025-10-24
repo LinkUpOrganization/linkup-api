@@ -92,9 +92,9 @@ public class PostService(ApplicationDbContext dbContext, IMapper mapper, UserMan
             .ThenByDescending(p => p.CreatedAt)
             .AsQueryable();
 
-        if (query.Filter.Latitude.HasValue && query.Filter.Longitude.HasValue && query.Filter.RadiusKm.HasValue)
-            postsQuery = ApplyLocationFilter(query.Filter.Latitude.Value, query.Filter.Longitude.Value,
-                query.Filter.RadiusKm.Value, postsQuery);
+        if (query.Params.Latitude.HasValue && query.Params.Longitude.HasValue && query.Params.RadiusKm.HasValue)
+            postsQuery = ApplyLocationFilter(query.Params.Latitude.Value, query.Params.Longitude.Value,
+                query.Params.RadiusKm.Value, postsQuery);
 
         var posts = await postsQuery
             .Skip(offset)
@@ -134,9 +134,9 @@ public class PostService(ApplicationDbContext dbContext, IMapper mapper, UserMan
         if (!string.IsNullOrEmpty(query.Cursor))
             postsQuery = ApplyCursorPaging(query.Cursor, postsQuery);
 
-        if (query.Filter.Latitude.HasValue && query.Filter.Longitude.HasValue && query.Filter.RadiusKm.HasValue)
-            postsQuery = ApplyLocationFilter(query.Filter.Latitude.Value, query.Filter.Longitude.Value,
-                query.Filter.RadiusKm.Value, postsQuery);
+        if (query.Params.Latitude.HasValue && query.Params.Longitude.HasValue && query.Params.RadiusKm.HasValue)
+            postsQuery = ApplyLocationFilter(query.Params.Latitude.Value, query.Params.Longitude.Value,
+                query.Params.RadiusKm.Value, postsQuery);
 
         var posts = await postsQuery
             .Take(query.PageSize)
@@ -144,7 +144,7 @@ public class PostService(ApplicationDbContext dbContext, IMapper mapper, UserMan
 
         var result = await BuildPagedPostResultAsync(posts, query, ct);
 
-        result.NextCursor = posts.Count == query.PageSize && query.Filter.Type != PostFilterType.Top
+        result.NextCursor = posts.Count == query.PageSize && query.Params.SortType != PostSortType.Top
             ? $"{posts.Last().CreatedAt:o}|{posts.Last().Id}"
             : null;
 
@@ -161,9 +161,9 @@ public class PostService(ApplicationDbContext dbContext, IMapper mapper, UserMan
         if (!string.IsNullOrEmpty(query.Cursor))
             postsQuery = ApplyCursorPaging(query.Cursor, postsQuery);
 
-        if (query.Filter.Latitude.HasValue && query.Filter.Longitude.HasValue && query.Filter.RadiusKm.HasValue)
-            postsQuery = ApplyLocationFilter(query.Filter.Latitude.Value, query.Filter.Longitude.Value,
-                query.Filter.RadiusKm.Value, postsQuery);
+        if (query.Params.Latitude.HasValue && query.Params.Longitude.HasValue && query.Params.RadiusKm.HasValue)
+            postsQuery = ApplyLocationFilter(query.Params.Latitude.Value, query.Params.Longitude.Value,
+                query.Params.RadiusKm.Value, postsQuery);
 
 
         var posts = await postsQuery
@@ -171,7 +171,7 @@ public class PostService(ApplicationDbContext dbContext, IMapper mapper, UserMan
             .ToListAsync(ct);
 
         var result = await BuildPagedPostResultAsync(posts, query, ct);
-        result.NextCursor = posts.Count == query.PageSize && query.Filter.Type != PostFilterType.Top
+        result.NextCursor = posts.Count == query.PageSize && query.Params.SortType != PostSortType.Top
             ? $"{posts.Last().CreatedAt:o}|{posts.Last().Id}"
             : null;
 
