@@ -677,4 +677,20 @@ public class PostService(ApplicationDbContext dbContext, IMapper mapper, UserMan
         return result ? Result.Success() : Result.Failure("Failed to toggle reaction");
     }
 
+    public async Task<Result<List<PostRoutePointDto>>> GetUserPostLocations(string userId)
+    {
+        var sql = @"
+            SELECT 
+                ST_Y(""Location""::geometry) AS ""Latitude"",
+                ST_X(""Location""::geometry) AS ""Longitude""
+            FROM ""Posts""
+            WHERE ""AuthorId"" = {0} AND ""Location"" IS NOT NULL;
+        ";
+
+        var points = await dbContext.PostRoutePoints
+            .FromSqlRaw(sql, userId)
+            .ToListAsync();
+
+        return Result<List<PostRoutePointDto>>.Success(points);
+    }
 }

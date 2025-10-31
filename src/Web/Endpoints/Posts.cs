@@ -11,6 +11,7 @@ using Application.Posts.Queries.GetPost;
 using Application.Posts.Queries.GetPostClusters;
 using Application.Posts.Queries.GetPostComments;
 using Application.Posts.Queries.GetPosts;
+using Application.Posts.Queries.GetUserPostRoutePoints;
 using Domain.Constants;
 using Domain.Enums;
 using MediatR;
@@ -31,6 +32,7 @@ public class Posts : EndpointGroupBase
            .MapDelete(DeletePost, "{postId}")
            .MapDelete(DeletePostComment, "{postId}/comments/{commentId}")
            .MapGet(GetPost, "{postId}")
+           .MapGet(GetUserPostLocations, "post-locations")
            .MapGet(GetPostComments, "{postId}/comments");
 
         app.MapGroup(this)
@@ -245,6 +247,12 @@ public class Posts : EndpointGroupBase
     private async Task<IResult> GetPostComments([FromRoute] string postId, ISender sender)
     {
         var result = await sender.Send(new GetPostCommentsQuery { PostId = postId });
+        return result.IsSuccess ? Results.Ok(result.Value) : Results.BadRequest(result.Error);
+    }
+
+    private async Task<IResult> GetUserPostLocations([FromQuery] string userId, ISender sender)
+    {
+        var result = await sender.Send(new GetUserPostLocationsQuery { UserId = userId });
         return result.IsSuccess ? Results.Ok(result.Value) : Results.BadRequest(result.Error);
     }
 }

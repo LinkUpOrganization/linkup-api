@@ -28,4 +28,5 @@ public interface IPostService
         CancellationToken ct);
     Task<Result<string>> CreatePostCommentAsync(CreatePostCommentDto dto);
     Task<Result<List<PostCommentResponseDto>>> GetPostCommentsAsync(string postId);
+    Task<Result<List<PostRoutePointDto>>> GetUserPostLocations(string userId);
 }
