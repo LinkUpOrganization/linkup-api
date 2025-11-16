@@ -21,8 +21,12 @@ builder.Services.Configure<JwtOptions>(
     builder.Configuration.GetSection(JwtOptions.SectionName));
 builder.Services.Configure<CloudinaryOptions>(
     builder.Configuration.GetSection(CloudinaryOptions.SectionName));
+builder.Services.Configure<SmtpOptions>(
+    builder.Configuration.GetSection(SmtpOptions.SectionName));
 builder.Services.Configure<ClientOptions>(
     builder.Configuration.GetSection(ClientOptions.SectionName));
+builder.Services.Configure<LocationIqOptions>(
+    builder.Configuration.GetSection(LocationIqOptions.SectionName));
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICookieService, CookieService>();
 builder.Services.AddMemoryCache();
@@ -82,12 +86,13 @@ builder.Services.AddAuthentication(options =>
     options.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"]!;
 });
 
-builder.Services.Configure<SmtpSettings>(configuration.GetSection("SmtpSettings"));
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
 builder.Services.AddScoped<IPostService, PostService>();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddScoped<IVerificationLinkService, VerificationLinkService>();
+builder.Services.AddHttpClient<ILocationIqService, LocationIqService>();
+
 
 builder.Services.AddAuthorizationBuilder()
     .AddPolicy("EmailVerified", policy =>

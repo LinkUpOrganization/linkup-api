@@ -9,9 +9,9 @@ using MimeKit;
 
 namespace Infrastructure.Services;
 
-public class EmailService(IOptions<SmtpSettings> settings, ILogger<EmailService> logger) : IEmailService
+public class EmailService(IOptions<SmtpOptions> settings, ILogger<EmailService> logger) : IEmailService
 {
-    private readonly SmtpSettings _settings = settings.Value;
+    private readonly SmtpOptions _settings = settings.Value;
     private readonly ILogger<EmailService> _logger = logger;
 
     public async Task<Result<string>> SendEmailAsync(string to, string subject, string body, bool isHtml = true)
