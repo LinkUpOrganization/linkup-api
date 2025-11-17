@@ -6,6 +6,7 @@ using FluentValidation.AspNetCore;
 using Infrastructure.Identity;
 using Infrastructure.Identity.Mappings;
 using Infrastructure.Persistence;
+using Infrastructure.Persistence.Repositories;
 using Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -89,6 +90,9 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
 builder.Services.AddScoped<IPostService, PostService>();
+builder.Services.AddScoped<ICommentService, CommentService>();
+builder.Services.AddScoped<IGeoService, GeoService>();
+builder.Services.AddScoped<IGeoRepository, GeoRepository>();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddScoped<IVerificationLinkService, VerificationLinkService>();
 builder.Services.AddHttpClient<ILocationIqService, LocationIqService>();

@@ -1,5 +1,4 @@
 using Application.Common.DTOs;
-using Application.Geo.Queries.GetDefaultLocation;
 
 namespace Application.Common.Interfaces;
 

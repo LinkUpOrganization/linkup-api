@@ -1,4 +1,4 @@
-namespace Application.Geo.Queries.GetDefaultLocation;
+namespace Application.Common.DTOs;
 
 public class LocationDto
 {
