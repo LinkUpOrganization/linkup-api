@@ -95,6 +95,7 @@ builder.Services.AddScoped<IGeoService, GeoService>();
 builder.Services.AddScoped<IGeoRepository, GeoRepository>();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddScoped<IVerificationLinkService, VerificationLinkService>();
+builder.Services.AddScoped<IImageValidationService, ImageValidationService>();
 builder.Services.AddHttpClient<ILocationIqService, LocationIqService>();
 
 
