@@ -1,6 +1,6 @@
 namespace Application.Common.DTOs;
 
-public class UserProfieDto
+public class UserProfileDto
 {
     public string Id { get; set; } = null!;
     public string DisplayName { get; set; } = null!;

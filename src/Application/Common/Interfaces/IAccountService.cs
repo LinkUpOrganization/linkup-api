@@ -16,5 +16,5 @@ public interface IAccountService
     Task<Result<User>> GetUserByEmailAsync(string email);
     Task<Result> LogoutAsync(string refreshToken);
     Task<Result> ToggleFollowAsync(string followerId, string followeeId, bool IsFollowed);
-    Task<Result<UserProfieDto>> GetUserInformationAsync(string userId, string? currentUserId = null);
+    Task<Result<UserProfileDto>> GetUserInformationAsync(string userId, string? currentUserId = null);
 }

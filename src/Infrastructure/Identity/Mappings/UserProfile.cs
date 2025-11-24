@@ -9,7 +9,7 @@ public class UserProfile : Profile
     public UserProfile()
     {
         CreateMap<ApplicationUser, User>();
-        CreateMap<ApplicationUser, UserProfieDto>()
+        CreateMap<ApplicationUser, UserProfileDto>()
                 .ForMember(dto => dto.IsVerified, opt => opt.MapFrom(src => src.EmailConfirmed));
     }
 }

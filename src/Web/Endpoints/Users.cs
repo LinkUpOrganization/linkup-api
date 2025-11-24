@@ -1,4 +1,5 @@
 using Application.Users.Commands.ToggleFollow;
+using Application.Users.Queries.GetRecommendedUsers;
 using Application.Users.Queries.GetUserInfo;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -15,7 +16,8 @@ public class Users : EndpointGroupBase
 
         app.MapGroup(this)
             .RequireAuthorization()
-            .MapPost(ToggleFollow, "{followeeId}/toggle-follow");
+            .MapPost(ToggleFollow, "{followeeId}/toggle-follow")
+            .MapGet(GetRecommendedUsers, "recommended");
     }
 
 
@@ -38,5 +40,11 @@ public class Users : EndpointGroupBase
         });
 
         return result.IsSuccess ? Results.Ok(result) : Results.BadRequest(result.Error);
+    }
+
+    private async Task<IResult> GetRecommendedUsers(ISender sender)
+    {
+        var result = await sender.Send(new GetRecommendedUsersQuery());
+        return result.IsSuccess ? Results.Ok(result.Value) : Results.BadRequest(result.Error);
     }
 }

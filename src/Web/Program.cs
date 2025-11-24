@@ -96,6 +96,9 @@ builder.Services.AddScoped<IGeoRepository, GeoRepository>();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddScoped<IVerificationLinkService, VerificationLinkService>();
 builder.Services.AddScoped<IImageValidationService, ImageValidationService>();
+builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<IAccountService, AccountService>();
+builder.Services.AddScoped<IRecommendationsService, RecommendationsService>();
 builder.Services.AddHttpClient<ILocationIqService, LocationIqService>();
 
 
@@ -108,8 +111,6 @@ builder.Services.AddMediatR(cfg =>
     cfg.RegisterServicesFromAssembly(typeof(Application.Weather.Queries.GetWeatherQuery).Assembly);
 });
 
-builder.Services.AddScoped<ITokenService, TokenService>();
-builder.Services.AddScoped<IAccountService, AccountService>();
 
 builder.Services.AddAutoMapper(
     typeof(Application.AssemblyMarker).Assembly,

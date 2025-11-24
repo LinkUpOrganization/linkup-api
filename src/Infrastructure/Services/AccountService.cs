@@ -226,7 +226,7 @@ public class AccountService(UserManager<ApplicationUser> userManager, ITokenServ
         return result ? Result.Success() : Result.Failure("Failed to toggle follow state");
 
     }
-    public async Task<Result<UserProfieDto>> GetUserInformationAsync(string userId, string? currentUserId)
+    public async Task<Result<UserProfileDto>> GetUserInformationAsync(string userId, string? currentUserId)
     {
         var user = await dbContext.Users
             .Include(u => u.Followers)
@@ -234,9 +234,9 @@ public class AccountService(UserManager<ApplicationUser> userManager, ITokenServ
             .FirstOrDefaultAsync(u => u.Id == userId);
 
         if (user == null)
-            return Result<UserProfieDto>.Failure("User not found");
+            return Result<UserProfileDto>.Failure("User not found");
 
-        var userInfo = mapper.Map<UserProfieDto>(user);
+        var userInfo = mapper.Map<UserProfileDto>(user);
         userInfo.FollowersCount = user.Followers.Count;
         userInfo.FollowingCount = user.Followings.Count;
 
@@ -244,7 +244,7 @@ public class AccountService(UserManager<ApplicationUser> userManager, ITokenServ
         else userInfo.IsFollowing = false;
 
 
-        return Result<UserProfieDto>.Success(userInfo);
+        return Result<UserProfileDto>.Success(userInfo);
     }
 
 }
