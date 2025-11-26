@@ -1,10 +1,7 @@
 using Application.Common;
-using Application.Common.DTOs;
 using Application.Common.Interfaces;
-using Application.Common.Options;
 using Domain.Enums;
 using MediatR;
-using Microsoft.Extensions.Options;
 
 namespace Application.Auth.Commands.ForgotPassword;
 
@@ -14,18 +11,16 @@ public class ForgotPasswordCommand : IRequest<Result>
 }
 
 public class ForgotPasswordCommandHandler(
-    IAccountService accountService,
+    IUserService userService,
     IEmailService emailService,
-    IOptions<ClientOptions> clientOptions,
     IVerificationLinkService linkService,
     ITokenService tokenService)
     : IRequestHandler<ForgotPasswordCommand, Result>
 {
-    private readonly ClientOptions _clientOptions = clientOptions.Value;
 
     public async Task<Result> Handle(ForgotPasswordCommand request, CancellationToken ct)
     {
-        var userResult = await accountService.GetUserByEmailAsync(request.Email);
+        var userResult = await userService.GetUserByEmailAsync(request.Email);
         if (!userResult.IsSuccess || userResult.Value == null)
             return Result.Failure(userResult.Error!, userResult.Code);
 

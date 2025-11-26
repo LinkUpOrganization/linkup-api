@@ -15,12 +15,12 @@ public class ToggleFollowRequest
     public bool IsFollowed { get; set; }
 }
 
-public class ToggleFollowCommandHandler(ICurrentUserService currentUserService, IAccountService accountService)
+public class ToggleFollowCommandHandler(ICurrentUserService currentUserService, IUserService userService)
     : IRequestHandler<ToggleFollowCommand, Result>
 {
     public async Task<Result> Handle(ToggleFollowCommand request, CancellationToken ct)
     {
         var userId = currentUserService.Id!;
-        return await accountService.ToggleFollowAsync(userId, request.FolloweeId, request.IsFollowed);
+        return await userService.ToggleFollowAsync(userId, request.FolloweeId, request.IsFollowed);
     }
 }

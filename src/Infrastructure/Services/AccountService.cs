@@ -1,11 +1,9 @@
 using System.Security.Claims;
 using Application.Common;
-using Application.Common.DTOs;
 using Application.Common.Exceptions;
 using Application.Common.Interfaces;
 using Application.Common.Models;
 using AutoMapper;
-using Domain.Entities;
 using Domain.Enums;
 using Infrastructure.Identity;
 using Infrastructure.Persistence;
@@ -56,20 +54,6 @@ public class AccountService(UserManager<ApplicationUser> userManager, ITokenServ
         var result = await userManager.CreateAsync(user, password);
         return result.Succeeded ? Result<User>.Success(mapper.Map<User>(user))
             : Result<User>.Failure("Failed to create user", 400);
-    }
-
-    public async Task<Result<User>> GetUserByIdAsync(string id)
-    {
-        var applicationUser = await userManager.FindByIdAsync(id);
-        if (applicationUser == null) return Result<User>.Failure("User not found", 404);
-        return Result<User>.Success(mapper.Map<User>(applicationUser));
-    }
-
-    public async Task<Result<User>> GetUserByEmailAsync(string email)
-    {
-        var applicationUser = await userManager.FindByEmailAsync(email);
-        if (applicationUser == null) return Result<User>.Failure("User not found", 404);
-        return Result<User>.Success(mapper.Map<User>(applicationUser));
     }
 
     public async Task<Result<User>> LoginAsync(string email, string password)
@@ -188,18 +172,6 @@ public class AccountService(UserManager<ApplicationUser> userManager, ITokenServ
         return Result.Failure(errors, 400);
     }
 
-    public async Task<Result<string>> GeneratePasswordResetTokenAsync(string email)
-    {
-        var user = await userManager.FindByEmailAsync(email);
-        if (user == null)
-            return Result<string>.Failure("User not found", 404);
-        var token = await userManager.GeneratePasswordResetTokenAsync(user);
-
-        return string.IsNullOrEmpty(token)
-            ? Result<string>.Failure("Failed to generate token", 400)
-            : Result<string>.Success(token);
-    }
-
     private async Task VerifyUserFromExternalProviderAsync(ApplicationUser user)
     {
         if (!user.EmailConfirmed)
@@ -208,43 +180,4 @@ public class AccountService(UserManager<ApplicationUser> userManager, ITokenServ
             await userManager.UpdateAsync(user);
         }
     }
-
-    public async Task<Result> ToggleFollowAsync(string followerId, string followeeId, bool IsFollowed)
-    {
-        var followee = await userManager.FindByIdAsync(followeeId);
-        if (followee == null) return Result.Failure("Followee not found");
-
-        var existingUserFollow = await dbContext.UserFollows.FirstOrDefaultAsync(x =>
-            x.FollowerId == followerId && x.FolloweeId == followeeId);
-
-        if (existingUserFollow == null)
-            dbContext.UserFollows.Add(new UserFollow { FollowerId = followerId, FolloweeId = followeeId });
-        else dbContext.Remove(existingUserFollow);
-
-        var result = await dbContext.SaveChangesAsync() > 0;
-
-        return result ? Result.Success() : Result.Failure("Failed to toggle follow state");
-
-    }
-    public async Task<Result<UserProfileDto>> GetUserInformationAsync(string userId, string? currentUserId)
-    {
-        var user = await dbContext.Users
-            .Include(u => u.Followers)
-            .Include(u => u.Followings)
-            .FirstOrDefaultAsync(u => u.Id == userId);
-
-        if (user == null)
-            return Result<UserProfileDto>.Failure("User not found");
-
-        var userInfo = mapper.Map<UserProfileDto>(user);
-        userInfo.FollowersCount = user.Followers.Count;
-        userInfo.FollowingCount = user.Followings.Count;
-
-        if (currentUserId != null) userInfo.IsFollowing = user.Followers.Any(f => f.FollowerId == currentUserId);
-        else userInfo.IsFollowing = false;
-
-
-        return Result<UserProfileDto>.Success(userInfo);
-    }
-
 }

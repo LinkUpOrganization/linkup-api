@@ -9,13 +9,13 @@ public class GetCurrentUserInfoQuery : IRequest<Result<UserProfileDto>>
 {
 }
 
-public class GetCurrentUserInfoQueryHandler(ICurrentUserService currentUserService, IAccountService accountService)
+public class GetCurrentUserInfoQueryHandler(ICurrentUserService currentUserService, IUserService userService)
     : IRequestHandler<GetCurrentUserInfoQuery, Result<UserProfileDto>>
 {
     public async Task<Result<UserProfileDto>> Handle(GetCurrentUserInfoQuery request, CancellationToken ct)
     {
         string userId = currentUserService.Id!;
-        var userResult = await accountService.GetUserInformationAsync(userId);
+        var userResult = await userService.GetUserInformationAsync(userId);
         if (userResult.IsSuccess && userResult.Value != null)
             return Result<UserProfileDto>.Success(userResult.Value);
 

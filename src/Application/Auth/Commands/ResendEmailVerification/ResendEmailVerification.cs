@@ -12,7 +12,7 @@ public class ResendEmailVerificationCommand : IRequest<Result>
 public class ResendEmailVerificationCommandHandler(
     ICurrentUserService currentUserService,
     IEmailService emailService,
-    IAccountService accountService,
+    IUserService userService,
     IVerificationLinkService linkService,
     ITokenService tokenService)
     : IRequestHandler<ResendEmailVerificationCommand, Result>
@@ -22,7 +22,7 @@ public class ResendEmailVerificationCommandHandler(
     {
         var userId = currentUserService.Id;
         if (userId == null) return Result.Failure("Anauthorized", 401);
-        var currentUserResult = await accountService.GetUserByIdAsync(userId);
+        var currentUserResult = await userService.GetUserByIdAsync(userId);
         if (!currentUserResult.IsSuccess || currentUserResult.Value == null)
             return Result.Failure(currentUserResult.Error!, currentUserResult.Code);
 

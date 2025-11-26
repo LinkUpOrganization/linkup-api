@@ -12,9 +12,5 @@ public interface IAccountService
     Task<Result> ResetPasswordAsync(string verificationToken, string newPassword);
     Task<Result<User>> CreateUserAsync(string email, string displayName, string password);
     Task<Result<User>> LoginAsync(string email, string password);
-    Task<Result<User>> GetUserByIdAsync(string id);
-    Task<Result<User>> GetUserByEmailAsync(string email);
     Task<Result> LogoutAsync(string refreshToken);
-    Task<Result> ToggleFollowAsync(string followerId, string followeeId, bool IsFollowed);
-    Task<Result<UserProfileDto>> GetUserInformationAsync(string userId, string? currentUserId = null);
 }
