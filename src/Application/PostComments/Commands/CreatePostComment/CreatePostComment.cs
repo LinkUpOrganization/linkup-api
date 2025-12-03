@@ -2,7 +2,7 @@ using Application.Common;
 using Application.Common.Interfaces;
 using MediatR;
 
-namespace Application.Posts.Commands.CreatePostComment;
+namespace Application.PostComments.Commands.CreatePostComment;
 
 public class CreatePostCommentCommand : IRequest<Result<string>>
 {

@@ -1,14 +1,14 @@
 using Application.Common;
 using Application.Common.Interfaces;
 using Infrastructure.Persistence;
-using Application.Posts.Commands.CreatePostComment;
-using Application.Posts.Queries.GetPostComments;
 using Microsoft.AspNetCore.Identity;
 using Infrastructure.Identity;
 using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using AutoMapper.QueryableExtensions;
 using AutoMapper;
+using Application.PostComments.Queries.GetPostComments;
+using Application.PostComments.Commands.CreatePostComment;
 
 
 namespace Infrastructure.Services;

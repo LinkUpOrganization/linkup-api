@@ -2,7 +2,7 @@ using Application.Common;
 using Application.Common.Interfaces;
 using MediatR;
 
-namespace Application.Posts.Queries.GetPostComments;
+namespace Application.PostComments.Queries.GetPostComments;
 
 public class GetPostCommentsQuery : IRequest<Result<List<PostCommentResponseDto>>>
 {

@@ -2,7 +2,7 @@ using Application.Common;
 using Application.Common.Interfaces;
 using MediatR;
 
-namespace Application.Posts.Commands.DeletePost;
+namespace Application.PostComments.Commands.DeletePostComment;
 
 public class DeletePostCommentCommand : IRequest<Result>
 {

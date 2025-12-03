@@ -1,5 +1,5 @@
-using Application.Posts.Commands.CreatePostComment;
-using Application.Posts.Queries.GetPostComments;
+using Application.PostComments.Commands.CreatePostComment;
+using Application.PostComments.Queries.GetPostComments;
 
 namespace Application.Common.Interfaces;
 

@@ -2,7 +2,7 @@ using Application.Common.DTOs;
 using AutoMapper;
 using Domain.Entities;
 
-namespace Application.Posts.Queries.GetPostComments;
+namespace Application.PostComments.Queries.GetPostComments;
 
 public class PostCommentResponseDto
 {

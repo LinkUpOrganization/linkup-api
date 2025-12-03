@@ -1,16 +1,26 @@
+using Application.Posts.Commands.EditPost;
 using FluentValidation.TestHelper;
-using Application.Posts.Commands.CreatePostComment;
 
-namespace Tests.Application.Posts.Commands.CreatePostComment;
+namespace Tests.Application.Posts.Commands.EditPost;
 
-public class CreatePostCommentCommandValidatorTests
+public class EditPostCommandValidatorTests
 {
-    private readonly CreatePostCommentCommandValidator _validator = new();
+    private readonly EditPostCommandValidator _validator = new();
+
+    [Fact]
+    public void Should_HaveError_WhenContentIsNull()
+    {
+        var command = new EditPostCommand { Content = null };
+
+        var result = _validator.TestValidate(command);
+
+        result.ShouldHaveValidationErrorFor(x => x.Content);
+    }
 
     [Fact]
     public void Should_HaveError_WhenContentIsEmpty()
     {
-        var command = new CreatePostCommentCommand { Content = "" };
+        var command = new EditPostCommand { Content = "" };
 
         var result = _validator.TestValidate(command);
 
@@ -20,7 +30,7 @@ public class CreatePostCommentCommandValidatorTests
     [Fact]
     public void Should_HaveError_WhenContentTooShort()
     {
-        var command = new CreatePostCommentCommand { Content = "12" }; // 2 символи
+        var command = new EditPostCommand { Content = "1234" }; // 4 символи
 
         var result = _validator.TestValidate(command);
 
@@ -31,7 +41,7 @@ public class CreatePostCommentCommandValidatorTests
     public void Should_HaveError_WhenContentTooLong()
     {
         var longText = new string('A', 301);
-        var command = new CreatePostCommentCommand { Content = longText };
+        var command = new EditPostCommand { Content = longText };
 
         var result = _validator.TestValidate(command);
 
@@ -42,7 +52,7 @@ public class CreatePostCommentCommandValidatorTests
     public void Should_NotHaveError_WhenContentIsValid()
     {
         var validText = new string('A', 100);
-        var command = new CreatePostCommentCommand { Content = validText };
+        var command = new EditPostCommand { Content = validText };
 
         var result = _validator.TestValidate(command);
 

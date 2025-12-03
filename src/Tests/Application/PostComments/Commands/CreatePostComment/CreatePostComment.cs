@@ -1,9 +1,9 @@
 using Application.Common;
 using Application.Common.Interfaces;
-using Application.Posts.Commands.CreatePostComment;
+using Application.PostComments.Commands.CreatePostComment;
 using Moq;
 
-namespace Tests.Application.Posts.Commands.CreatePostComment
+namespace Tests.Application.PostComments.Commands.CreatePostComment
 {
     public class CreatePostCommentCommandHandlerTests
     {

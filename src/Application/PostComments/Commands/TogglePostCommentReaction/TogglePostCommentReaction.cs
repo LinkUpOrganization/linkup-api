@@ -2,7 +2,7 @@ using Application.Common;
 using Application.Common.Interfaces;
 using MediatR;
 
-namespace Application.Posts.Commands.TogglePostCommentReaction;
+namespace Application.PostComments.Commands.TogglePostCommentReaction;
 
 public class TogglePostCommentReactionCommand : IRequest<Result>
 {
