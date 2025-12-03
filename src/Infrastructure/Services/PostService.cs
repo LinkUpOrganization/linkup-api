@@ -19,7 +19,8 @@ using NetTopologySuite.Geometries;
 namespace Infrastructure.Services;
 
 public class PostService(ApplicationDbContext dbContext, IMapper mapper, UserManager<ApplicationUser> userManager,
-    ICurrentUserService currentUser, ICloudinaryService cloudinaryService, IPostRepository postRepo) : IPostService
+    ICurrentUserService currentUser, ICloudinaryService cloudinaryService, IPostRepository postRepo,
+    IUserFollowRepository userFollowRepo) : IPostService
 {
     public async Task<Result<string>> CreatePostAsync(CreatePostDto dto)
     {
@@ -98,9 +99,7 @@ public class PostService(ApplicationDbContext dbContext, IMapper mapper, UserMan
         if (currentUser?.Id is null)
             return Result<PagedResult<PostResponseDto>>.Success(new PagedResult<PostResponseDto> { Items = [] });
 
-        var followeeIds = dbContext.UserFollows
-            .Where(f => f.FollowerId == currentUser.Id)
-            .Select(f => f.FolloweeId);
+        var followeeIds = await userFollowRepo.GetFolloweeIdsAsync(currentUser.Id, ct);
 
         var posts = await postRepo.GetFollowingPostsAsync(followeeIds, query.Cursor, query.PageSize,
             query.Params.Latitude, query.Params.Longitude, query.Params.RadiusKm, ct);

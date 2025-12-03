@@ -4,6 +4,7 @@ using Application.Posts.Queries.GetPosts;
 using MediatR;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Moq;
+
 namespace Tests.Posts;
 
 public class GetPostsTests
