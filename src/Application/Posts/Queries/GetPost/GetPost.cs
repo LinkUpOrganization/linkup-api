@@ -17,6 +17,6 @@ public class GetPostQueryHandler(IPostService postService)
 {
     public async Task<Result<PostResponseDto>> Handle(GetPostQuery request, CancellationToken ct)
     {
-        return await postService.GetPostByIdAsync(request.PostId, ct);
+        return await postService.GetPostDetailsByIdAsync(request.PostId, ct);
     }
 }

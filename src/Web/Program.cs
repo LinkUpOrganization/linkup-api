@@ -100,6 +100,7 @@ builder.Services.AddScoped<IGeoService, GeoService>();
 builder.Services.AddScoped<IGeoRepository, GeoRepository>();
 builder.Services.AddScoped<IPostRepository, PostRepository>();
 builder.Services.AddScoped<IUserFollowRepository, UserFollowRepository>();
+builder.Services.AddScoped<IReactionRepository, ReactionRepository>();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IVerificationLinkService, VerificationLinkService>();

@@ -1,9 +1,9 @@
+using Application.Common;
 using Application.Common.Interfaces;
 using Application.Common.Models;
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using Domain.Entities;
-using Infrastructure.Identity;
 using Microsoft.EntityFrameworkCore;
 using NetTopologySuite;
 using NetTopologySuite.Geometries;
@@ -82,6 +82,22 @@ public class PostRepository(ApplicationDbContext dbContext, IMapper mapper) : IP
             .Take(pageSize)
             .ToListAsync(ct);
     }
+    public async Task<int> GetReactionCountAsync(string postId, CancellationToken ct)
+    {
+        var dict = await GetReactionCountsAsync([postId], ct);
+        return dict.TryGetValue(postId, out var count) ? count : 0;
+    }
+
+    public async Task<int> GetCommentCountAsync(string postId, CancellationToken ct)
+    {
+        var dict = await GetCommentCountsAsync([postId], ct);
+        return dict.TryGetValue(postId, out var count) ? count : 0;
+    }
+
+    public Task<bool> IsPostLikedByUserAsync(string postId, string userId, CancellationToken ct)
+    {
+        return dbContext.PostReactions.AnyAsync(r => r.PostId == postId && r.UserId == userId, ct);
+    }
 
     public async Task<Dictionary<string, int>> GetReactionCountsAsync(List<string> postIds, CancellationToken ct)
     {
@@ -137,4 +153,37 @@ public class PostRepository(ApplicationDbContext dbContext, IMapper mapper) : IP
             .Where(p => p.Location != null &&
                         p.Location.IsWithinDistance(center, radiusKm * 1000));
     }
+
+    public async Task<Post?> GetPostWithPhotosAsync(string postId, CancellationToken ct = default)
+    {
+        return await dbContext.Posts
+            .Include(p => p.PostPhotos)
+            .FirstOrDefaultAsync(p => p.Id == postId, ct);
+    }
+
+    public async Task<Post?> GetPostByIdAsync(string postId, CancellationToken ct = default)
+    {
+        return await dbContext.Posts.FirstOrDefaultAsync(p => p.Id == postId, ct);
+    }
+
+    public async Task<Result> DeletePostAsync(Post post, CancellationToken ct)
+    {
+        dbContext.Remove(post);
+        var result = await dbContext.SaveChangesAsync(ct) > 0;
+
+        return result ? Result.Success() : Result.Failure("Failed to delete post");
+
+    }
+
+    public async Task AddPostAsync(Post post, CancellationToken ct)
+    {
+        dbContext.Posts.Add(post);
+        await dbContext.SaveChangesAsync(ct);
+    }
+
+    public Task<bool> SaveChangesAsync(CancellationToken ct)
+    {
+        return Task.FromResult(dbContext.SaveChangesAsync(ct).Result > 0);
+    }
+
 }
