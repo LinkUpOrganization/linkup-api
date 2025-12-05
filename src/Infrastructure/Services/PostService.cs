@@ -16,8 +16,8 @@ using NetTopologySuite.Geometries;
 namespace Infrastructure.Services;
 
 public class PostService(IMapper mapper, UserManager<ApplicationUser> userManager, ICurrentUserService currentUser,
-    ICloudinaryService cloudinaryService, IPostRepository postRepo, IUserFollowRepository userFollowRepo,
-    IPostReactionRepository reactionRepo) : IPostService
+    ICloudinaryService cloudinaryService, IPostRepository postRepo, IUserFollowRepository userFollowRepo)
+    : IPostService
 {
     public async Task<Result<string>> CreatePostAsync(CreatePostDto dto)
     {
@@ -130,23 +130,6 @@ public class PostService(IMapper mapper, UserManager<ApplicationUser> userManage
         }).ToList();
 
         return new PagedResult<PostResponseDto> { Items = converted };
-    }
-
-    public async Task<Result> TogglePostReactionAsync(string postId, string userId, bool isLiked)
-    {
-        var post = await postRepo.GetPostByIdAsync(postId, default);
-        if (post == null)
-            return Result.Failure("Post does not exist");
-
-        var reaction = await reactionRepo.GetReactionAsync(postId, userId);
-
-        if (reaction == null && isLiked)
-            await reactionRepo.AddReactionAsync(new PostReaction { PostId = postId, UserId = userId });
-
-        else if (reaction != null && !isLiked)
-            await reactionRepo.RemoveReactionAsync(reaction);
-
-        return Result.Success();
     }
 
     public async Task<Result> EditPostAsync(EditPostDto dto)

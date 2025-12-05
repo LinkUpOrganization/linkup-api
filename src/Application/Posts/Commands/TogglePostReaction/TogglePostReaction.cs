@@ -1,5 +1,6 @@
 using Application.Common;
 using Application.Common.Interfaces;
+using Domain.Entities;
 using MediatR;
 
 namespace Application.Posts.Commands.TogglePostReaction;
@@ -15,12 +16,25 @@ public class TogglePostLikeRequest
     public bool IsLiked { get; set; }
 }
 
-public class TogglePostReactionCommandHandler(IPostService postService, ICurrentUserService currentUserService)
-    : IRequestHandler<TogglePostReactionCommand, Result>
+public class TogglePostReactionCommandHandler(ICurrentUserService currentUserService, IPostRepository postRepo,
+    IPostReactionRepository reactionRepo) : IRequestHandler<TogglePostReactionCommand, Result>
 {
     public async Task<Result> Handle(TogglePostReactionCommand request, CancellationToken ct)
     {
         var userId = currentUserService.Id!;
-        return await postService.TogglePostReactionAsync(request.PostId, userId, request.IsLiked);
+
+        var post = await postRepo.GetPostByIdAsync(request.PostId, default);
+        if (post == null)
+            return Result.Failure("Post does not exist");
+
+        var reaction = await reactionRepo.GetReactionAsync(request.PostId, userId, ct);
+
+        if (reaction == null && request.IsLiked)
+            await reactionRepo.AddReactionAsync(new PostReaction { PostId = request.PostId, UserId = userId }, ct);
+
+        else if (reaction != null && !request.IsLiked)
+            await reactionRepo.RemoveReactionAsync(reaction, ct);
+
+        return Result.Success();
     }
 }
