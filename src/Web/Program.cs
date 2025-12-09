@@ -16,6 +16,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Web.Infrastructure;
+using Web.Infrastructure.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 var configuration = builder.Configuration;
@@ -110,6 +111,7 @@ builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddScoped<IRecommendationsService, RecommendationsService>();
 builder.Services.AddHttpClient<ILocationIqService, LocationIqService>();
+builder.Services.AddScoped<IImageUploadService, ImageUploadService>();
 
 
 builder.Services.AddAuthorizationBuilder()

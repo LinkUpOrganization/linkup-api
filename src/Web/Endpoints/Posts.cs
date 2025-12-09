@@ -19,6 +19,7 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Web.DTOs;
 using Web.Infrastructure;
+using Web.Infrastructure.Services;
 
 namespace Web.Endpoints;
 
@@ -43,107 +44,6 @@ public class Posts : EndpointGroupBase
            .MapPost(TogglePostReaction, "{postId}/toggle-reaction")
            .MapPost(TogglePostCommentReaction, "{postId}/comments/{commentId}/toggle-reaction")
            .MapPost(CreatePostComment, "{postId}/comments");
-    }
-
-    public async Task<IResult> CreatePost(
-        [FromForm] CreatePostRequest request,
-        [FromServices] ISender sender,
-        [FromServices] ICloudinaryService cloudinaryService,
-        [FromServices] IImageValidationService imageValidationService
-    )
-    {
-        var uploadedAssets = new List<CloudinaryUploadDto>();
-
-        if (request.PostPhotos != null && request.PostPhotos.Count > PostConstants.MaxPhotosPerPost)
-            return Results.BadRequest($"You can't upload more that {PostConstants.MaxPhotosPerPost} photos.");
-
-        if (request.PostPhotos != null && request.PostPhotos.Count != 0)
-        {
-            foreach (var file in request.PostPhotos)
-            {
-                if (file == null || file.Length == 0) continue;
-
-                await using var stream = file.OpenReadStream();
-                if (!imageValidationService.IsValidImage(stream))
-                    return Results.BadRequest("One of the files is not a valid image.");
-                stream.Position = 0; // Move pointer to the begining for Cloudinary
-
-                var uploadResult = await cloudinaryService.UploadImageAsync(stream, file.FileName);
-
-                if (!uploadResult.IsSuccess || uploadResult.Value == null)
-                    return Results.BadRequest(uploadResult.Error);
-
-                uploadedAssets.Add(uploadResult.Value);
-            }
-        }
-
-        var command = new CreatePostCommand
-        {
-            Content = request.Content,
-            Latitude = request.Latitude,
-            Longitude = request.Longitude,
-            Address = request.Address,
-            ImageRecords = uploadedAssets
-        };
-
-        var result = await sender.Send(command);
-
-        return result.IsSuccess ? Results.Ok(result.Value) : Results.BadRequest(result.Error);
-    }
-
-    public async Task<IResult> EditPost(
-        [FromForm] EditPostRequest request,
-        [FromServices] ISender sender,
-        [FromServices] ICloudinaryService cloudinaryService,
-        [FromServices] IPostService postService,
-        [FromServices] IImageValidationService imageValidationService,
-        [FromRoute] string postId
-        )
-    {
-        var uploadedAssets = new List<CloudinaryUploadDto>();
-
-        if (request.PhotosToAdd != null && request.PhotosToAdd.Count > 0)
-        {
-            var validationResult = await postService.ValidatePhotoLimitAsync(postId, request.PhotosToAdd.Count,
-                request.PhotosToDelete, CancellationToken.None);
-            if (!validationResult.IsSuccess)
-                return Results.BadRequest(validationResult.Error);
-        }
-
-        if (request.PhotosToAdd != null && request.PhotosToAdd.Count != 0)
-        {
-            foreach (var file in request.PhotosToAdd)
-            {
-                if (file == null || file.Length == 0) continue;
-
-                await using var stream = file.OpenReadStream();
-                if (!imageValidationService.IsValidImage(stream))
-                    return Results.BadRequest("One of the files is not a valid image.");
-                stream.Position = 0; // Move pointer to the begining for Cloudinary
-
-                var uploadResult = await cloudinaryService.UploadImageAsync(stream, file.FileName);
-
-                if (!uploadResult.IsSuccess || uploadResult.Value == null)
-                    return Results.BadRequest(uploadResult.Error);
-
-                uploadedAssets.Add(uploadResult.Value);
-            }
-        }
-
-        var command = new EditPostCommand
-        {
-            PostId = postId,
-            Content = request.Content,
-            Latitude = request.Latitude,
-            Longitude = request.Longitude,
-            Address = request.Address,
-            PhotosToAdd = uploadedAssets,
-            PhotosToDelete = request.PhotosToDelete
-        };
-
-        var result = await sender.Send(command);
-
-        return result.IsSuccess ? Results.Ok() : Results.BadRequest(result.Error);
     }
 
     public async Task<IResult> GetPosts(
@@ -264,4 +164,87 @@ public class Posts : EndpointGroupBase
         var result = await sender.Send(new GetUserPostLocationsQuery { UserId = userId });
         return result.IsSuccess ? Results.Ok(result.Value) : Results.BadRequest(result.Error);
     }
+
+    public async Task<IResult> CreatePost(
+    [FromForm] CreatePostRequest request,
+    ISender sender,
+    IImageUploadService imageUploadService
+    )
+    {
+        List<CloudinaryUploadDto> uploadedAssets;
+
+        try
+        {
+            uploadedAssets = await imageUploadService.UploadAsync(
+                request.PostPhotos,
+                PostConstants.MaxPhotosPerPost
+            );
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Results.BadRequest(ex.Message);
+        }
+
+        var command = new CreatePostCommand
+        {
+            Content = request.Content,
+            Latitude = request.Latitude,
+            Longitude = request.Longitude,
+            Address = request.Address,
+            ImageRecords = uploadedAssets
+        };
+
+        var result = await sender.Send(command);
+        return result.IsSuccess ? Results.Ok(result.Value) : Results.BadRequest(result.Error);
+    }
+
+    public async Task<IResult> EditPost(
+    [FromForm] EditPostRequest request,
+    [FromRoute] string postId,
+    ISender sender,
+    IPostService postService,
+    IImageUploadService imageUploadService
+    )
+    {
+        List<CloudinaryUploadDto> uploadedAssets;
+
+        if (request.PhotosToAdd != null && request.PhotosToAdd.Count > 0)
+        {
+            var validationResult = await postService.ValidatePhotoLimitAsync(
+                postId,
+                request.PhotosToAdd.Count,
+                request.PhotosToDelete,
+                CancellationToken.None
+            );
+
+            if (!validationResult.IsSuccess)
+                return Results.BadRequest(validationResult.Error);
+        }
+
+        try
+        {
+            uploadedAssets = await imageUploadService.UploadAsync(
+                request.PhotosToAdd
+            );
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Results.BadRequest(ex.Message);
+        }
+
+        var command = new EditPostCommand
+        {
+            PostId = postId,
+            Content = request.Content,
+            Latitude = request.Latitude,
+            Longitude = request.Longitude,
+            Address = request.Address,
+            PhotosToAdd = uploadedAssets,
+            PhotosToDelete = request.PhotosToDelete
+        };
+
+        var result = await sender.Send(command);
+        return result.IsSuccess ? Results.Ok() : Results.BadRequest(result.Error);
+    }
+
 }
