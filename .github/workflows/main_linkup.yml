@@ -13,7 +13,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: read #This is required for actions/checkout
+      contents: read
 
     steps:
       - uses: actions/checkout@v4
@@ -23,11 +23,17 @@ jobs:
         with:
           dotnet-version: '8.x'
 
-      - name: Build with dotnet
-        run: dotnet build --configuration Release
+      # 1. Відновлюємо залежності для всього рішення (рекомендовано для Clean Architecture)
+      - name: dotnet restore
+        run: dotnet restore
 
+      # 2. Білдимо конкретно веб-проєкт (вказуємо шлях до .csproj)
+      - name: Build with dotnet
+        run: dotnet build src/Web/Web.csproj --configuration Release --no-restore
+
+      # 3. Публікуємо веб-проєкт в папку 'myapp'
       - name: dotnet publish
-        run: dotnet publish -c Release -o ${{env.DOTNET_ROOT}}/myapp
+        run: dotnet publish src/Web/Web.csproj -c Release -o ${{env.DOTNET_ROOT}}/myapp
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
@@ -39,14 +45,15 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     permissions:
-      id-token: write #This is required for requesting the JWT
-      contents: read #This is required for actions/checkout
+      id-token: write
+      contents: read
 
     steps:
       - name: Download artifact from build job
         uses: actions/download-artifact@v4
         with:
           name: .net-app
+          path: ./publish # Завантажуємо в конкретну папку для чистоти
       
       - name: Login to Azure
         uses: azure/login@v2
@@ -61,5 +68,4 @@ jobs:
         with:
           app-name: 'linkup'
           slot-name: 'Production'
-          package: .
-          
+          package: ./publish # Вказуємо папку, куди завантажили артефакт
